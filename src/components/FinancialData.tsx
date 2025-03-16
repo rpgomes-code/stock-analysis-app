@@ -5,58 +5,75 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/
 import {Button} from '@/components/ui/button';
 import {Skeleton} from '@/components/ui/skeleton';
 import {stockService} from '@/services/api';
-import {BarChart, BarChart2, DollarSign, TrendingUp} from 'lucide-react';
+import {BarChart, BarChart2, DollarSign, TrendingUp, AlertTriangle} from 'lucide-react';
+import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface FinancialDataProps {
     symbol: string;
 }
 
+interface FinancialData {
+    date: string;
+    [key: string]: string | number | null;
+}
+
+interface FinancialDataState {
+    annual: FinancialData[];
+    quarterly: FinancialData[];
+}
+
 const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
     const [activeTab, setActiveTab] = useState('income');
-    interface FinancialData {
-        date: string;
-        [key: string]: string | number | null;
-    }
-
-    const [incomeData, setIncomeData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
-    const [balanceData, setBalanceData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
-    const [cashFlowData, setCashFlowData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
+    const [incomeData, setIncomeData] = useState<FinancialDataState | null>(null);
+    const [balanceData, setBalanceData] = useState<FinancialDataState | null>(null);
+    const [cashFlowData, setCashFlowData] = useState<FinancialDataState | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAnnual, setIsAnnual] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchFinancialData = async () => {
             setIsLoading(true);
+            setError(null);
+
             try {
                 // Fetch income statement data
-                const incomeStatementAnnual = await stockService.getTickerIncomeStatement(symbol);
-                const incomeStatementQuarterly = await stockService.getTickerIncomeStatement(symbol); // In real app, use quarterly endpoint
+                const incomeStatement = await stockService.getTickerIncomeStatement(symbol);
 
                 // Fetch balance sheet data
-                const balanceSheetAnnual = await stockService.getTickerBalanceSheet(symbol);
-                const balanceSheetQuarterly = await stockService.getTickerBalanceSheet(symbol); // In real app, use quarterly endpoint
+                const balanceSheet = await stockService.getTickerBalanceSheet(symbol);
 
                 // Fetch cash flow data
-                const cashFlowAnnual = await stockService.getTickerCashFlow(symbol);
-                const cashFlowQuarterly = await stockService.getTickerCashFlow(symbol); // In real app, use quarterly endpoint
+                const cashFlow = await stockService.getTickerCashFlow(symbol);
 
                 // Process and set data
+                // Annual data is typically available in most APIs, quarterly might be separate endpoints
+                // or require special parameters in some APIs
+
+                // For income statement
                 setIncomeData({
-                    annual: processFinancialData(incomeStatementAnnual),
-                    quarterly: processFinancialData(incomeStatementQuarterly),
+                    annual: processFinancialData(incomeStatement.annual || incomeStatement),
+                    quarterly: processFinancialData(incomeStatement.quarterly || incomeStatement)
                 });
 
+                // For balance sheet
                 setBalanceData({
-                    annual: processFinancialData(balanceSheetAnnual),
-                    quarterly: processFinancialData(balanceSheetQuarterly),
+                    annual: processFinancialData(balanceSheet.annual || balanceSheet),
+                    quarterly: processFinancialData(balanceSheet.quarterly || balanceSheet)
                 });
 
+                // For cash flow
                 setCashFlowData({
-                    annual: processFinancialData(cashFlowAnnual),
-                    quarterly: processFinancialData(cashFlowQuarterly),
+                    annual: processFinancialData(cashFlow.annual || cashFlow),
+                    quarterly: processFinancialData(cashFlow.quarterly || cashFlow)
                 });
             } catch (error) {
                 console.error('Error fetching financial data:', error);
+                setError('Failed to load financial data. Please try again later.');
+                toast.error('Error', {
+                    description: 'Failed to load financial data'
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -109,11 +126,11 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
 
         switch (activeTab) {
             case 'income':
-                return incomeData && incomeData[period as 'annual' | 'quarterly'] ? incomeData[period as 'annual' | 'quarterly'] : [];
+                return incomeData && incomeData[period] ? incomeData[period] : [];
             case 'balance':
-                return balanceData && balanceData[period as 'annual' | 'quarterly'] ? balanceData[period as 'annual' | 'quarterly'] : [];
+                return balanceData && balanceData[period] ? balanceData[period] : [];
             case 'cashflow':
-                return cashFlowData && cashFlowData[period as 'annual' | 'quarterly'] ? cashFlowData[period as 'annual' | 'quarterly'] : [];
+                return cashFlowData && cashFlowData[period] ? cashFlowData[period] : [];
             default:
                 return [];
         }
@@ -159,9 +176,24 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
 
         // Get available columns from data and filter to only show important ones
         const availableColumns = Object.keys(data[0] || {});
-        return availableColumns.filter(col =>
+
+        // First try to get columns that match our key metrics
+        const matchingColumns = availableColumns.filter(col =>
             keyMetrics[activeTab as keyof typeof keyMetrics].includes(col) || commonColumns.includes(col)
         );
+
+        // If we don't find any matching columns, just return the first few columns
+        if (matchingColumns.length <= 1) {
+            // Return date column plus up to 6 other columns
+            return [
+                'date',
+                ...availableColumns
+                    .filter(col => col !== 'date')
+                    .slice(0, 6)
+            ];
+        }
+
+        return matchingColumns;
     };
 
     // Get human-readable column names
@@ -189,7 +221,17 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
             date: 'Period'
         };
 
-        return nameMap[column] || column;
+        return nameMap[column] || formatColumnName(column);
+    };
+
+    // Helper to format column names if they don't match our predefined map
+    const formatColumnName = (column: string) => {
+        // Convert camelCase or PascalCase to space-separated words
+        const formatted = column
+            .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+            .replace(/^./, str => str.toUpperCase()); // Ensure first letter is uppercase
+
+        return formatted.trim();
     };
 
     const columns = getColumns();
@@ -256,6 +298,12 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
                         <Skeleton className="h-8 w-full" />
                         <Skeleton className="h-8 w-full" />
                     </div>
+                ) : error ? (
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
                 ) : data.length === 0 ? (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground">No financial data available</p>
@@ -281,14 +329,14 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
                                                 className={column === 'date' ? 'font-medium' : 'text-right'}
                                             >
                                                 {column === 'date'
-                                                    ? new Date(row[column]).toLocaleDateString('en-US', {
+                                                    ? new Date(row[column] as string).toLocaleDateString('en-US', {
                                                         year: 'numeric',
                                                         month: 'short',
                                                         day: 'numeric',
                                                     })
                                                     : column === 'EPS'
-                                                        ? row[column] !== null ? formatNumber(row[column]).replace('$', '') : ''
-                                                        : row[column] !== null ? formatNumber(row[column]) : ''}
+                                                        ? row[column] !== null ? formatNumber(row[column]).replace('$', '') : '—'
+                                                        : row[column] !== null ? formatNumber(row[column]) : '—'}
                                             </TableCell>
                                         ))}
                                     </TableRow>

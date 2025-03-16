@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import {LineChart, BarChart, PieChart, ArrowUpRight, ArrowDownRight, AlertTriangle, PlusCircle} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,42 +19,10 @@ import {
 } from 'recharts';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-// Mock portfolio data (in a real app, this would be fetched from backend)
-const MOCK_PORTFOLIO_DATA = {
-    totalValue: 48761.23,
-    initialInvestment: 42500,
-    allTimeReturn: 6261.23,
-    allTimeReturnPercent: 14.73,
-    dailyChange: 356.87,
-    dailyChangePercent: 0.74,
-    holdings: [
-        { symbol: 'AAPL', name: 'Apple Inc.', shares: 20, avgCost: 153.42, currentPrice: 189.78, value: 3795.60, weight: 7.78, return: 726.20, returnPercent: 23.7 },
-        { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 15, avgCost: 287.65, currentPrice: 421.89, value: 6328.35, weight: 12.98, return: 2016.60, returnPercent: 46.8 },
-        { symbol: 'AMZN', name: 'Amazon.com Inc.', shares: 25, avgCost: 132.18, currentPrice: 178.12, value: 4453.00, weight: 9.13, return: 1148.50, returnPercent: 34.8 },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', shares: 30, avgCost: 124.67, currentPrice: 147.21, value: 4416.30, weight: 9.06, return: 676.20, returnPercent: 18.1 },
-        { symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 8, avgCost: 478.23, currentPrice: 950.62, value: 7604.96, weight: 15.60, return: 3780.12, returnPercent: 98.8 },
-        { symbol: 'BRK-B', name: 'Berkshire Hathaway', shares: 18, avgCost: 347.89, currentPrice: 412.14, value: 7418.52, weight: 15.21, return: 1155.50, returnPercent: 18.5 },
-        { symbol: 'JPM', name: 'JPMorgan Chase', shares: 35, avgCost: 160.42, currentPrice: 187.68, value: 6568.80, weight: 13.47, return: 953.10, returnPercent: 17.0 },
-        { symbol: 'JNJ', name: 'Johnson & Johnson', shares: 40, avgCost: 165.73, currentPrice: 154.32, value: 6172.80, weight: 12.66, return: -456.40, returnPercent: -6.9 },
-        { symbol: 'PG', name: 'Procter & Gamble', shares: 22, avgCost: 145.28, currentPrice: 161.13, value: 3544.86, weight: 7.27, return: 348.70, returnPercent: 10.9 },
-    ],
-    history: [
-        { date: '2023-03-15', value: 42500.00 },
-        { date: '2023-04-15', value: 43121.45 },
-        { date: '2023-05-15', value: 44567.89 },
-        { date: '2023-06-15', value: 43980.12 },
-        { date: '2023-07-15', value: 45321.56 },
-        { date: '2023-08-15', value: 46876.34 },
-        { date: '2023-09-15', value: 45789.23 },
-        { date: '2023-10-15', value: 47234.56 },
-        { date: '2023-11-15', value: 47890.10 },
-        { date: '2023-12-15', value: 48123.78 },
-        { date: '2024-01-15', value: 47432.19 },
-        { date: '2024-02-15', value: 47980.67 },
-        { date: '2024-03-15', value: 48761.23 },
-    ],
-};
+import { stockService } from '@/services/api';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
 // Colors for the chart
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00C49F', '#FFBB28', '#FF8042', '#a4de6c'];
@@ -62,39 +31,280 @@ interface PortfolioOverviewProps {
     userId: string;
 }
 
+interface PortfolioData {
+    id: string;
+    name: string;
+    initialInvestment: number;
+    totalValue: number;
+    allTimeReturn: number;
+    allTimeReturnPercent: number;
+    dailyChange: number;
+    dailyChangePercent: number;
+    holdings: HoldingData[];
+    history: HistoryPoint[];
+}
+
+interface HoldingData {
+    id: string;
+    symbol: string;
+    name: string;
+    shares: number;
+    avgCost: number;
+    currentPrice: number;
+    value: number;
+    weight: number;
+    return: number;
+    returnPercent: number;
+}
+
+interface HistoryPoint {
+    date: string;
+    value: number;
+}
+
 export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
-    const [portfolioData, setPortfolioData] = useState(MOCK_PORTFOLIO_DATA);
-    const [isLoading, setIsLoading] = useState(false);
+    const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // In a real implementation, fetch portfolio data from your backend
+    // Fetch portfolio data
     useEffect(() => {
-        // This would be an API call to your backend
         const fetchPortfolioData = async () => {
             setIsLoading(true);
             try {
-                // For demo, we'll use the mock data
-                // const response = await fetch(`/api/portfolio/${userId}/overview`);
-                // const data = await response.json();
-                // setPortfolioData(data);
+                // Fetch list of portfolios
+                const portfoliosResponse = await axios.get('/api/portfolios');
+                const portfolios = portfoliosResponse.data;
 
-                // Simulate API call
-                setTimeout(() => {
-                    setPortfolioData(MOCK_PORTFOLIO_DATA);
+                if (!portfolios || portfolios.length === 0) {
                     setIsLoading(false);
-                }, 500);
+                    return;
+                }
+
+                // Get the first portfolio (or you could add logic to select a specific one)
+                const portfolioId = portfolios[0].id;
+
+                // Fetch detailed portfolio data including stocks
+                const portfolioResponse = await axios.get(`/api/portfolios/${portfolioId}`);
+                const portfolio = portfolioResponse.data;
+
+                // No stocks in portfolio
+                if (!portfolio.stocks || portfolio.stocks.length === 0) {
+                    setPortfolioData({
+                        ...portfolio,
+                        totalValue: portfolio.initialInvestment || 0,
+                        allTimeReturn: 0,
+                        allTimeReturnPercent: 0,
+                        dailyChange: 0,
+                        dailyChangePercent: 0,
+                        holdings: [],
+                        history: generateHistoryData(portfolio.createdAt, portfolio.initialInvestment || 0)
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Fetch stock data for all stocks in portfolio
+                const symbols = portfolio.stocks.map((stock: { symbol: string }) => stock.symbol);
+                const stocksData = await stockService.getMultiTicker(symbols);
+
+                // Get transactions for this portfolio
+                const transactionsResponse = await axios.get(`/api/portfolios/${portfolioId}/transactions`);
+                const transactions = transactionsResponse.data;
+
+                // Calculate holdings based on transactions
+                const holdings = calculateHoldings(portfolio.stocks, transactions, stocksData);
+
+                // Calculate portfolio value and returns
+                const totalValue = holdings.reduce((sum: number, holding: HoldingData) => sum + holding.value, 0);
+                const initialInvestment = portfolio.initialInvestment ||
+                    holdings.reduce((sum: number, holding: HoldingData) =>
+                        sum + (holding.shares * holding.avgCost), 0);
+
+                const allTimeReturn = totalValue - initialInvestment;
+                const allTimeReturnPercent = initialInvestment > 0 ? (allTimeReturn / initialInvestment) * 100 : 0;
+
+                // Calculate daily change (this is simplified; in real app you'd use yesterday's closing values)
+                const dailyChange = holdings.reduce((sum: number, holding: HoldingData) => {
+                    const stockData = stocksData[holding.symbol];
+                    const change = stockData ? (stockData.regularMarketChange || 0) * holding.shares : 0;
+                    return sum + change;
+                }, 0);
+
+                const dailyChangePercent = totalValue > 0 ? (dailyChange / totalValue) * 100 : 0;
+
+                // Generate historical data (in a real app, you'd fetch this from an API)
+                const history = generatePerformanceHistory(portfolioId, initialInvestment, totalValue);
+
+                setPortfolioData({
+                    ...portfolio,
+                    initialInvestment,
+                    totalValue,
+                    allTimeReturn,
+                    allTimeReturnPercent,
+                    dailyChange,
+                    dailyChangePercent,
+                    holdings,
+                    history
+                });
             } catch (err) {
                 console.error("Error fetching portfolio data:", err);
                 setError("Failed to load portfolio data. Please try again later.");
+                toast.error("Error", {
+                    description: "Failed to load portfolio data"
+                });
+            } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchPortfolioData().then(() => {});
+        if (userId) {
+            fetchPortfolioData().then(() => {});
+        }
     }, [userId]);
 
+    // Helper function to calculate holdings based on transactions
+    const calculateHoldings = (
+        stocks: any[],
+        transactions: any[],
+        stocksData: Record<string, any>
+    ): HoldingData[] => {
+        // Group transactions by symbol
+        const transactionsBySymbol: Record<string, any[]> = {};
+        transactions.forEach((transaction: any) => {
+            if (!transactionsBySymbol[transaction.stockSymbol]) {
+                transactionsBySymbol[transaction.stockSymbol] = [];
+            }
+            transactionsBySymbol[transaction.stockSymbol].push(transaction);
+        });
+
+        // Calculate holdings
+        const holdings: HoldingData[] = [];
+        let totalPortfolioValue = 0;
+
+        stocks.forEach((stock) => {
+            const stockTransactions = transactionsBySymbol[stock.symbol] || [];
+            let totalShares = 0;
+            let totalCost = 0;
+
+            // Calculate shares and cost basis from transactions
+            stockTransactions.forEach((transaction: any) => {
+                if (transaction.type === 'BUY') {
+                    totalShares += transaction.quantity;
+                    totalCost += transaction.quantity * transaction.price;
+                } else if (transaction.type === 'SELL') {
+                    totalShares -= transaction.quantity;
+                    // For simplicity, we don't adjust cost basis on sells
+                    // In a real app, you might want to implement FIFO/LIFO
+                }
+            });
+
+            // Skip if no shares (all sold)
+            if (totalShares <= 0) return;
+
+            const avgCost = totalShares > 0 ? totalCost / totalShares : 0;
+            const stockData = stocksData[stock.symbol] || {};
+            const currentPrice = stockData.regularMarketPrice || stockData.currentPrice || 0;
+            const value = totalShares * currentPrice;
+            const returnValue = value - (totalShares * avgCost);
+            const returnPercent = avgCost > 0 ? (returnValue / (totalShares * avgCost)) * 100 : 0;
+
+            totalPortfolioValue += value;
+
+            holdings.push({
+                id: stock.id,
+                symbol: stock.symbol,
+                name: stockData.shortName || stockData.longName || stock.symbol,
+                shares: totalShares,
+                avgCost,
+                currentPrice,
+                value,
+                weight: 0, // Will calculate after getting total value
+                return: returnValue,
+                returnPercent
+            });
+        });
+
+        // Calculate weights
+        if (totalPortfolioValue > 0) {
+            holdings.forEach(holding => {
+                holding.weight = (holding.value / totalPortfolioValue) * 100;
+            });
+        }
+
+        return holdings;
+    };
+
+    // Generate mock history data
+    // In a real app, you'd fetch this from an API with actual historical values
+    const generatePerformanceHistory = (portfolioId: string, initialValue: number, currentValue: number) => {
+        const history = [];
+        const now = new Date();
+        const startDate = new Date(now);
+        startDate.setFullYear(startDate.getFullYear() - 1);
+
+        // For demo purposes, create a roughly linear growth with some volatility
+        // In a real app, this would be actual historical data
+        const days = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const increment = (currentValue - initialValue) / days;
+
+        for (let i = 0; i <= days; i += 7) { // Weekly points
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + i);
+
+            // Add some randomness
+            const randomFactor = 1 + (Math.random() * 0.04 - 0.02); // ±2%
+            const value = initialValue + (increment * i * randomFactor);
+
+            history.push({
+                date: format(date, 'yyyy-MM-dd'),
+                value: Math.max(0, Math.round(value * 100) / 100)
+            });
+        }
+
+        // Ensure the last point matches current value
+        if (history.length > 0) {
+            history[history.length - 1].value = currentValue;
+        }
+
+        return history;
+    };
+
+    // Helper function to generate empty history data
+    const generateHistoryData = (createdAtStr: string, initialValue: number) => {
+        const history = [];
+        const createdAt = new Date(createdAtStr);
+        const now = new Date();
+
+        // Add creation date point
+        history.push({
+            date: format(createdAt, 'yyyy-MM-dd'),
+            value: initialValue
+        });
+
+        // Add current date point
+        history.push({
+            date: format(now, 'yyyy-MM-dd'),
+            value: initialValue
+        });
+
+        return history;
+    };
+
     if (isLoading) {
-        return <div>Loading portfolio data...</div>;
+        return <div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <Skeleton className="h-80 w-full lg:col-span-2" />
+                <Skeleton className="h-80 w-full" />
+            </div>
+            <Skeleton className="h-96 w-full" />
+        </div>;
     }
 
     if (error) {
@@ -107,7 +317,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
         );
     }
 
-    if (!portfolioData || portfolioData.holdings.length === 0) {
+    if (!portfolioData) {
         return (
             <div className="text-center py-12">
                 <h2 className="text-xl font-semibold mb-4">No Portfolio Data Available</h2>
@@ -276,29 +486,35 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="h-72 flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RechartsPieChart>
-                                    <Pie
-                                        data={portfolioData.holdings}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        outerRadius={90}
-                                        innerRadius={40}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                        nameKey="symbol"
-                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
-                                    >
-                                        {portfolioData.holdings.map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(value: number) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Value']}
-                                    />
-                                </RechartsPieChart>
-                            </ResponsiveContainer>
+                            {portfolioData.holdings.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RechartsPieChart>
+                                        <Pie
+                                            data={portfolioData.holdings}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            outerRadius={90}
+                                            innerRadius={40}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            nameKey="symbol"
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                                        >
+                                            {portfolioData.holdings.map((_entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Value']}
+                                        />
+                                    </RechartsPieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="text-center text-muted-foreground">
+                                    <p>No holdings to display</p>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -316,46 +532,58 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                            <tr className="border-b">
-                                <th className="text-left py-3 px-4">Symbol</th>
-                                <th className="text-left py-3 px-4">Name</th>
-                                <th className="text-right py-3 px-4">Shares</th>
-                                <th className="text-right py-3 px-4">Avg Cost</th>
-                                <th className="text-right py-3 px-4">Current Price</th>
-                                <th className="text-right py-3 px-4">Value</th>
-                                <th className="text-right py-3 px-4">Weight</th>
-                                <th className="text-right py-3 px-4">Return ($)</th>
-                                <th className="text-right py-3 px-4">Return (%)</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {portfolioData.holdings.map((holding) => (
-                                <tr key={holding.symbol} className="border-b hover:bg-muted/50">
-                                    <td className="py-3 px-4 font-medium">
-                                        <Link href={`/stocks/${holding.symbol}`} className="hover:underline">
-                                            {holding.symbol}
-                                        </Link>
-                                    </td>
-                                    <td className="py-3 px-4">{holding.name}</td>
-                                    <td className="py-3 px-4 text-right">{holding.shares}</td>
-                                    <td className="py-3 px-4 text-right">${holding.avgCost.toFixed(2)}</td>
-                                    <td className="py-3 px-4 text-right">${holding.currentPrice.toFixed(2)}</td>
-                                    <td className="py-3 px-4 text-right">${holding.value.toFixed(2)}</td>
-                                    <td className="py-3 px-4 text-right">{holding.weight.toFixed(2)}%</td>
-                                    <td className={`py-3 px-4 text-right ${holding.return >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        ${holding.return.toFixed(2)}
-                                    </td>
-                                    <td className={`py-3 px-4 text-right ${holding.returnPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        {holding.returnPercent >= 0 ? '+' : ''}{holding.returnPercent.toFixed(2)}%
-                                    </td>
+                    {portfolioData.holdings.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                <tr className="border-b">
+                                    <th className="text-left py-3 px-4">Symbol</th>
+                                    <th className="text-left py-3 px-4">Name</th>
+                                    <th className="text-right py-3 px-4">Shares</th>
+                                    <th className="text-right py-3 px-4">Avg Cost</th>
+                                    <th className="text-right py-3 px-4">Current Price</th>
+                                    <th className="text-right py-3 px-4">Value</th>
+                                    <th className="text-right py-3 px-4">Weight</th>
+                                    <th className="text-right py-3 px-4">Return ($)</th>
+                                    <th className="text-right py-3 px-4">Return (%)</th>
                                 </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                {portfolioData.holdings.map((holding) => (
+                                    <tr key={holding.id} className="border-b hover:bg-muted/50">
+                                        <td className="py-3 px-4 font-medium">
+                                            <Link href={`/stocks/${holding.symbol}`} className="hover:underline">
+                                                {holding.symbol}
+                                            </Link>
+                                        </td>
+                                        <td className="py-3 px-4">{holding.name}</td>
+                                        <td className="py-3 px-4 text-right">{holding.shares.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right">${holding.avgCost.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right">${holding.currentPrice.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right">${holding.value.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right">{holding.weight.toFixed(2)}%</td>
+                                        <td className={`py-3 px-4 text-right ${holding.return >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            ${holding.return.toFixed(2)}
+                                        </td>
+                                        <td className={`py-3 px-4 text-right ${holding.returnPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                            {holding.returnPercent >= 0 ? '+' : ''}{holding.returnPercent.toFixed(2)}%
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p>No holdings in this portfolio yet.</p>
+                            <Button className="mt-4" asChild>
+                                <Link href={`/portfolio/${portfolioData.id}/add`}>
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    Add Stock
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

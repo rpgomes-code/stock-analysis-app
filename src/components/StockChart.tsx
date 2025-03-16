@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { stockService } from '@/services/api';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface StockChartProps {
     symbol: string;
@@ -34,18 +35,23 @@ interface ChartData {
     volume: number;
 }
 
+interface StockInfo {
+    shortName?: string;
+    longName?: string;
+    regularMarketPrice?: number;
+    regularMarketChange?: number;
+    regularMarketChangePercent?: number;
+    [key: string]: string | number | undefined;
+}
+
 const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
     const [data, setData] = useState<ChartData[]>([]);
     const [period, setPeriod] = useState('1mo');
     const [interval, setInterval] = useState('1d');
     const [isLoading, setIsLoading] = useState(false);
     const [selectedTab, setSelectedTab] = useState('price');
-    interface StockInfo {
-        shortName?: string;
-        longName?: string;
-        [key: string]: string | number | undefined;
-    }
     const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Periods for the selector
     const periods = [
@@ -85,13 +91,23 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
     // Fetch stock data
     useEffect(() => {
         const fetchData = async () => {
+            if (!symbol) return;
+
             setIsLoading(true);
+            setError(null);
+
             try {
-                // Fetch historical data
+                // Fetch historical data using the API service
                 const historyData = await stockService.getTickerHistory(symbol, {
                     period,
                     interval,
                 });
+
+                if (!historyData || historyData.length === 0) {
+                    setError("No historical data available for this time period");
+                    setData([]);
+                    return;
+                }
 
                 // Process data for the chart
                 const processedData = historyData.map((item: { Date: string; Open: number; High: number; Low: number; Close: number; Volume: number }) => ({
@@ -112,14 +128,16 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                 }
             } catch (error) {
                 console.error('Error fetching stock data:', error);
+                setError("Failed to load chart data. Please try again later.");
+                toast.error("Error", {
+                    description: "Failed to load chart data"
+                });
             } finally {
                 setIsLoading(false);
             }
         };
 
-        if (symbol) {
-            fetchData().then(() => {});
-        }
+        fetchData().then(() => {});
     }, [symbol, period, interval]);
 
     // Color based on stock performance
@@ -144,6 +162,18 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
     const chartColor = getChartColor();
     const validIntervals = getValidIntervals();
 
+    // Current stock price from stockInfo or last data point
+    const currentPrice = stockInfo?.regularMarketPrice ||
+        (data.length > 0 ? data[data.length - 1].close : 0);
+
+    // Current price change
+    const priceChange = stockInfo?.regularMarketChange ||
+        (data.length > 1 ? data[data.length - 1].close - data[0].close : 0);
+
+    // Current percent change
+    const percentChange = stockInfo?.regularMarketChangePercent ||
+        (data.length > 1 ? ((data[data.length - 1].close - data[0].close) / data[0].close) * 100 : 0);
+
     return (
         <Card className="w-full h-full shadow-md">
             <CardHeader className="pb-0 pt-4">
@@ -155,23 +185,24 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                         )}
                     </div>
                     <div className="text-right">
-                        {data.length > 0 && (
+                        {!isLoading && (
                             <>
-                                <p className="text-xl font-bold">${data[data.length - 1].close.toFixed(2)}</p>
+                                <p className="text-xl font-bold">${currentPrice.toFixed(2)}</p>
                                 <div
                                     className={`text-sm flex items-center justify-end ${
-                                        (typeof performance.value === 'string' ? parseFloat(performance.value) : performance.value) >= 0 ? 'text-green-500' : 'text-red-500'
+                                        priceChange >= 0 ? 'text-green-500' : 'text-red-500'
                                     }`}
                                 >
-                                    {Number(performance.value) >= 0 ? (
+                                    {priceChange >= 0 ? (
                                         <ChevronUp className="h-4 w-4" />
                                     ) : (
                                         <ChevronDown className="h-4 w-4" />
                                     )}
                                     <span>
-                    {Number(performance.value) >= 0 ? '+' : ''}
-                                        {performance.value} ({performance.percent}%)
-                  </span>
+                                        {priceChange >= 0 ? '+' : ''}
+                                        {typeof priceChange === 'number' ? priceChange.toFixed(2) : priceChange}
+                                        ({typeof percentChange === 'number' ? percentChange.toFixed(2) : percentChange}%)
+                                    </span>
                                 </div>
                             </>
                         )}
@@ -227,6 +258,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                     <TabsContent value="price" className="h-[300px]">
                         {isLoading ? (
                             <div className="h-full flex items-center justify-center">Loading chart data...</div>
+                        ) : error ? (
+                            <div className="h-full flex items-center justify-center text-red-500">{error}</div>
                         ) : data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -270,6 +303,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                     <TabsContent value="volume" className="h-[300px]">
                         {isLoading ? (
                             <div className="h-full flex items-center justify-center">Loading volume data...</div>
+                        ) : error ? (
+                            <div className="h-full flex items-center justify-center text-red-500">{error}</div>
                         ) : data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

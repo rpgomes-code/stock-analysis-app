@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { PlusCircle, Briefcase, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
     const [isOpen, setIsOpen] = useState(false);
     const [portfolioName, setPortfolioName] = useState('');
     const [portfolioDescription, setPortfolioDescription] = useState('');
+    const [initialInvestment, setInitialInvestment] = useState('0');
     const [isCreating, setIsCreating] = useState(false);
 
     const handleCreatePortfolio = async () => {
@@ -38,46 +40,61 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
 
         setIsCreating(true);
         try {
-            // This would be an API call to create a new portfolio
-            const response = await fetch('/api/portfolio', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                userId,
+            // Convert initialInvestment to a number
+            const investmentValue = parseFloat(initialInvestment) || 0;
+
+            // Real API call to create a new portfolio
+            const response = await axios.post('/api/portfolios', {
                 name: portfolioName,
                 description: portfolioDescription,
-              }),
+                initialInvestment: investmentValue
             });
 
-            // const data = await response.json();
-
-            // Uncomment the actual API call to use userId and remove the mock code below
-                    const data = await response.json();
-                    const mockPortfolioId = data.id;
+            // Get the new portfolio data from the response
+            const data = response.data;
+            const newPortfolioId = data.portfolio?.id;
 
             // Reset form and close dialog
             setPortfolioName('');
             setPortfolioDescription('');
+            setInitialInvestment('0');
             setIsOpen(false);
 
             // Show success toast
-            toast.success('Success',{
+            toast.success('Success', {
                 description: 'Portfolio created successfully',
             });
 
             // Navigate to the newly created portfolio page
-            // In a real app, you would navigate to the actual portfolio ID returned from the API
-            router.push(`/portfolio/${mockPortfolioId}`);
+            if (newPortfolioId) {
+                router.push(`/portfolio/${newPortfolioId}`);
+            } else {
+                router.push('/portfolio'); // Fallback to the portfolio list
+            }
+
             router.refresh();
         } catch (error) {
             console.error('Failed to create portfolio:', error);
-            toast.error('Error',{
+            toast.error('Error', {
                 description: 'Failed to create portfolio. Please try again.'
             });
         } finally {
             setIsCreating(false);
+        }
+    };
+
+    // Validate that the initial investment is a valid number
+    const validateInvestment = (value: string) => {
+        // Allow empty string (will default to 0)
+        if (value === '') {
+            setInitialInvestment('');
+            return;
+        }
+
+        // Only allow numbers with up to 2 decimal places
+        const regex = /^\d+(\.\d{0,2})?$/;
+        if (regex.test(value)) {
+            setInitialInvestment(value);
         }
     };
 
@@ -108,6 +125,20 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
                             value={portfolioName}
                             onChange={(e) => setPortfolioName(e.target.value)}
                         />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="initial-investment">Initial Investment ($)</Label>
+                        <Input
+                            id="initial-investment"
+                            placeholder="Initial investment amount"
+                            value={initialInvestment}
+                            onChange={(e) => validateInvestment(e.target.value)}
+                            type="text"
+                            inputMode="decimal"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Enter the total amount you&#39;ve already invested (optional)
+                        </p>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="portfolio-description">Description (Optional)</Label>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import {
     Briefcase,
     Pencil,
@@ -37,60 +38,38 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-
-// Mock portfolio data (would come from your backend)
-const MOCK_PORTFOLIOS = [
-    {
-        id: '1',
-        name: 'Long-Term Growth',
-        description: 'Focus on blue-chip stocks for long-term growth',
-        stockCount: 12,
-        totalValue: 48761.23,
-        initialInvestment: 42500.00,
-        returnAmount: 6261.23,
-        returnPercent: 14.73,
-        dailyChange: 356.87,
-        dailyChangePercent: 0.74,
-        createdAt: '2023-03-15T10:30:00Z',
-        updatedAt: '2024-03-15T14:22:35Z',
-    },
-    {
-        id: '2',
-        name: 'Tech Portfolio',
-        description: 'High-growth technology companies',
-        stockCount: 8,
-        totalValue: 31245.67,
-        initialInvestment: 25000.00,
-        returnAmount: 6245.67,
-        returnPercent: 24.98,
-        dailyChange: -420.30,
-        dailyChangePercent: -1.33,
-        createdAt: '2023-05-22T15:45:00Z',
-        updatedAt: '2024-03-14T09:12:18Z',
-    },
-    {
-        id: '3',
-        name: 'Dividend Income',
-        description: 'Stable companies with strong dividend payouts',
-        stockCount: 15,
-        totalValue: 62387.91,
-        initialInvestment: 60000.00,
-        returnAmount: 2387.91,
-        returnPercent: 3.98,
-        dailyChange: 128.45,
-        dailyChangePercent: 0.21,
-        createdAt: '2023-07-10T11:20:00Z',
-        updatedAt: '2024-03-15T10:45:12Z',
-    },
-];
+import { toast } from 'sonner';
+import { stockService } from '@/services/api';
 
 interface PortfolioListProps {
     userId: string;
 }
 
+interface Portfolio {
+    id: string;
+    name: string;
+    description?: string;
+    initialInvestment: number;
+    userId: string;
+    stocks: Stock[];
+    createdAt: string;
+    updatedAt: string;
+    totalValue?: number;
+    returnAmount?: number;
+    returnPercent?: number;
+    dailyChange?: number;
+    dailyChangePercent?: number;
+}
+
+interface Stock {
+    id: string;
+    symbol: string;
+    [key: string]: any;
+}
+
 export default function PortfolioList({ userId }: PortfolioListProps) {
     const router = useRouter();
-    const [portfolios, setPortfolios] = useState<typeof MOCK_PORTFOLIOS>([]);
+    const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [portfolioToDelete, setPortfolioToDelete] = useState<string | null>(null);
@@ -105,23 +84,103 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
         const fetchPortfolios = async () => {
             setIsLoading(true);
             try {
-                // This would be an API call to your backend
-                // const response = await fetch(`/api/portfolio/list?userId=${userId}`);
-                // const data = await response.json();
+                // Fetch portfolios from the API
+                const response = await axios.get('/api/portfolios');
+                const portfoliosData = response.data;
 
-                // For demo, we'll use the mock data
-                setTimeout(() => {
-                    setPortfolios(MOCK_PORTFOLIOS);
+                if (!portfoliosData || portfoliosData.length === 0) {
+                    setPortfolios([]);
                     setIsLoading(false);
-                }, 800);
+                    return;
+                }
+
+                // Fetch current prices for stocks in all portfolios
+                const allStockSymbols = new Set<string>();
+                portfoliosData.forEach((portfolio: Portfolio) => {
+                    portfolio.stocks.forEach((stock: Stock) => {
+                        allStockSymbols.add(stock.symbol);
+                    });
+                });
+
+                const symbols = Array.from(allStockSymbols);
+                const stocksData = symbols.length > 0 ?
+                    await stockService.getMultiTicker(symbols) :
+                    {};
+
+                // Calculate portfolio values and returns
+                const enrichedPortfolios = await Promise.all(portfoliosData.map(async (portfolio: Portfolio) => {
+                    // For each portfolio, we need to get transactions to calculate average cost
+                    let transactions = [];
+                    try {
+                        const transactionsResponse = await axios.get(`/api/portfolios/${portfolio.id}/transactions`);
+                        transactions = transactionsResponse.data;
+                    } catch (err) {
+                        console.error(`Error fetching transactions for portfolio ${portfolio.id}:`, err);
+                        transactions = [];
+                    }
+
+                    // Calculate portfolio value and metrics
+                    let totalValue = 0;
+                    let dailyChange = 0;
+
+                    portfolio.stocks.forEach((stock: Stock) => {
+                        const stockData = stocksData[stock.symbol];
+                        if (!stockData) return;
+
+                        // Calculate shares and cost basis from transactions
+                        let totalShares = 0;
+                        let totalCost = 0;
+
+                        transactions
+                            .filter((t: any) => t.stockSymbol === stock.symbol)
+                            .forEach((transaction: any) => {
+                                if (transaction.type === 'BUY') {
+                                    totalShares += transaction.quantity;
+                                    totalCost += transaction.quantity * transaction.price;
+                                } else if (transaction.type === 'SELL') {
+                                    totalShares -= transaction.quantity;
+                                }
+                            });
+
+                        if (totalShares <= 0) return; // Skip if no shares
+
+                        const stockValue = totalShares * (stockData.regularMarketPrice || 0);
+                        totalValue += stockValue;
+
+                        // Calculate daily change contribution
+                        dailyChange += (stockData.regularMarketChange || 0) * totalShares;
+                    });
+
+                    const initialInvestment = portfolio.initialInvestment || 0;
+                    const returnAmount = totalValue - initialInvestment;
+                    const returnPercent = initialInvestment > 0 ? (returnAmount / initialInvestment) * 100 : 0;
+                    const dailyChangePercent = totalValue > 0 ? (dailyChange / totalValue) * 100 : 0;
+
+                    return {
+                        ...portfolio,
+                        totalValue,
+                        returnAmount,
+                        returnPercent,
+                        dailyChange,
+                        dailyChangePercent
+                    };
+                }));
+
+                setPortfolios(enrichedPortfolios);
             } catch (err) {
                 console.error('Error fetching portfolios:', err);
                 setError('Failed to load portfolios. Please try again later.');
+                toast.error('Error', {
+                    description: 'Failed to load portfolios'
+                });
+            } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchPortfolios().then(() => {});
+        if (userId) {
+            fetchPortfolios().then(() => {});
+        }
     }, [userId]);
 
     // Handle portfolio deletion
@@ -130,13 +189,8 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
 
         setIsDeleting(true);
         try {
-            // This would be an API call to delete the portfolio
-            // await fetch(`/api/portfolio/${portfolioToDelete}`, {
-            //   method: 'DELETE',
-            // });
-
-            // For demo, we'll simulate an API call
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Call API to delete portfolio
+            await axios.delete(`/api/portfolios/${portfolioToDelete}`);
 
             // Update local state to remove the deleted portfolio
             setPortfolios(prevPortfolios =>
@@ -145,9 +199,15 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
 
             setIsDeleteDialogOpen(false);
             setPortfolioToDelete(null);
+
+            toast.success('Success', {
+                description: 'Portfolio deleted successfully'
+            });
         } catch (err) {
             console.error('Error deleting portfolio:', err);
-            setError('Failed to delete portfolio. Please try again later.');
+            toast.error('Error', {
+                description: 'Failed to delete portfolio. Please try again.'
+            });
         } finally {
             setIsDeleting(false);
         }
@@ -159,17 +219,10 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
 
         setIsRenaming(true);
         try {
-            // This would be an API call to rename the portfolio
-            // await fetch(`/api/portfolio/${isRenamingPortfolio}`, {
-            //   method: 'PATCH',
-            //   headers: {
-            //     'Content-Type': 'application/json',
-            //   },
-            //   body: JSON.stringify({ name: newPortfolioName }),
-            // });
-
-            // For demo, we'll simulate an API call
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Call API to update portfolio name
+            await axios.put(`/api/portfolios/${isRenamingPortfolio}`, {
+                name: newPortfolioName
+            });
 
             // Update local state with the new name
             setPortfolios(prevPortfolios =>
@@ -182,15 +235,21 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
 
             setIsRenamingPortfolio(null);
             setNewPortfolioName('');
+
+            toast.success('Success', {
+                description: 'Portfolio renamed successfully'
+            });
         } catch (err) {
             console.error('Error renaming portfolio:', err);
-            setError('Failed to rename portfolio. Please try again later.');
+            toast.error('Error', {
+                description: 'Failed to rename portfolio. Please try again.'
+            });
         } finally {
             setIsRenaming(false);
         }
     };
 
-    // Render loading skeletons
+    // Render loading state
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -337,10 +396,10 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                                     Value
                                   </span>
                                     <span className="text-lg font-semibold">
-                                        ${portfolio.totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        ${(portfolio.totalValue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </span>
                                     <span className="text-xs text-muted-foreground mt-1">
-                                        {portfolio.stockCount} {portfolio.stockCount === 1 ? 'stock' : 'stocks'}
+                                        {portfolio.stocks.length} {portfolio.stocks.length === 1 ? 'stock' : 'stocks'}
                                     </span>
                                 </div>
 
@@ -349,22 +408,22 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                                     <CalendarClock className="h-3 w-3 mr-1" />
                                     Daily Change
                                   </span>
-                                    <span className={`text-lg font-semibold flex items-center ${portfolio.dailyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        {portfolio.dailyChange >= 0 ?
+                                    <span className={`text-lg font-semibold flex items-center ${(portfolio.dailyChange || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {(portfolio.dailyChange || 0) >= 0 ?
                                             <TrendingUp className="h-4 w-4 mr-1" /> :
                                             <TrendingDown className="h-4 w-4 mr-1" />
                                         }
-                                        ${Math.abs(portfolio.dailyChange).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        ${Math.abs(portfolio.dailyChange || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </span>
-                                    <span className={`text-xs ${portfolio.dailyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChangePercent.toFixed(2)}%
+                                    <span className={`text-xs ${(portfolio.dailyChangePercent || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {(portfolio.dailyChangePercent || 0) >= 0 ? '+' : ''}{(portfolio.dailyChangePercent || 0).toFixed(2)}%
                                     </span>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <span className="text-xs text-muted-foreground mb-1">Initial Investment</span>
                                     <span className="text-lg font-semibold">
-                                        ${portfolio.initialInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        ${(portfolio.initialInvestment || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </span>
                                     <span className="text-xs text-muted-foreground mt-1">
                                         Total cost basis
@@ -373,11 +432,11 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
 
                                 <div className="flex flex-col">
                                     <span className="text-xs text-muted-foreground mb-1">Total Return</span>
-                                    <span className={`text-lg font-semibold ${portfolio.returnAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        ${portfolio.returnAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    <span className={`text-lg font-semibold ${(portfolio.returnAmount || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        ${(portfolio.returnAmount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </span>
-                                    <span className={`text-xs ${portfolio.returnAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        {portfolio.returnAmount >= 0 ? '+' : ''}{portfolio.returnPercent.toFixed(2)}%
+                                    <span className={`text-xs ${(portfolio.returnPercent || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {(portfolio.returnPercent || 0) >= 0 ? '+' : ''}{(portfolio.returnPercent || 0).toFixed(2)}%
                                     </span>
                                 </div>
                             </div>

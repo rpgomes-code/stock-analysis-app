@@ -1,6 +1,7 @@
 // src/components/Watchlist.tsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import {
     Card,
     CardContent,
@@ -65,6 +66,8 @@ interface WatchlistItem {
     id: string;
     name: string;
     stocks: StockItem[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 interface StockItem {
@@ -87,40 +90,24 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [stockToDelete, setStockToDelete] = useState<string | null>(null);
     const [listToDelete, setListToDelete] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
 
     // Fetch user's watchlists
     useEffect(() => {
         const fetchWatchlists = async () => {
             setIsLoading(true);
             try {
-                // This would typically be an API call to your backend
-                // For now, we'll mock some data
-                const mockWatchlists = [
-                    {
-                        id: '1',
-                        name: 'Tech Stocks',
-                        stocks: [
-                            { id: '1', symbol: 'AAPL' },
-                            { id: '2', symbol: 'MSFT' },
-                            { id: '3', symbol: 'GOOGL' },
-                        ],
-                    },
-                    {
-                        id: '2',
-                        name: 'Energy Stocks',
-                        stocks: [
-                            { id: '4', symbol: 'XOM' },
-                            { id: '5', symbol: 'CVX' },
-                        ],
-                    },
-                ];
+                // Real API call to fetch watchlists
+                const response = await axios.get('/api/watchlists');
+                const data = response.data;
 
-                setWatchlists(mockWatchlists);
-                if (mockWatchlists.length > 0 && !activeWatchlist) {
-                    setActiveWatchlist(mockWatchlists[0].id);
+                setWatchlists(data);
+                if (data.length > 0 && !activeWatchlist) {
+                    setActiveWatchlist(data[0].id);
                 }
             } catch (error) {
                 console.error('Error fetching watchlists:', error);
+                setError('Failed to load watchlists. Please try again later.');
                 toast.error('Error',{
                     description: 'Failed to load watchlists',
                 });
@@ -132,7 +119,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         if (userId) {
             fetchWatchlists().then(() => {});
         }
-    }, [userId]);
+    }, [userId, activeWatchlist]);
 
     // Get current stock data for the active watchlist
     useEffect(() => {
@@ -184,7 +171,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         fetchStockData().then(() => {});
     }, [activeWatchlist, watchlists]);
 
-    const handleCreateWatchlist = () => {
+    const handleCreateWatchlist = async () => {
         if (!newWatchlistName.trim()) {
             toast.error('Error',{
                 description: 'Please enter a watchlist name',
@@ -192,23 +179,30 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
             return;
         }
 
-        // Create a new watchlist (in a real app, this would be an API call)
-        const newWatchlist = {
-            id: Date.now().toString(),
-            name: newWatchlistName,
-            stocks: [],
-        };
+        try {
+            // Create a new watchlist via API
+            const response = await axios.post('/api/watchlists', {
+                name: newWatchlistName
+            });
 
-        setWatchlists([...watchlists, newWatchlist]);
-        setActiveWatchlist(newWatchlist.id);
-        setNewWatchlistName('');
+            const newWatchlist = response.data.watchlist;
 
-        toast.success('Success',{
-            description: `Watchlist "${newWatchlistName}" created`,
-        });
+            setWatchlists(prev => [...prev, newWatchlist]);
+            setActiveWatchlist(newWatchlist.id);
+            setNewWatchlistName('');
+
+            toast.success('Success',{
+                description: `Watchlist "${newWatchlistName}" created`,
+            });
+        } catch (error) {
+            console.error('Error creating watchlist:', error);
+            toast.error('Error', {
+                description: 'Failed to create watchlist'
+            });
+        }
     };
 
-    const handleAddStock = (symbol: string) => {
+    const handleAddStock = async (symbol: string) => {
         if (!activeWatchlist) return;
 
         // Check if the stock is already in the watchlist
@@ -222,63 +216,84 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
             return;
         }
 
-        // Add the stock to the watchlist
-        setWatchlists(prev =>
-            prev.map(list => {
-                if (list.id === activeWatchlist) {
-                    return {
-                        ...list,
-                        stocks: [
-                            ...list.stocks,
-                            { id: Date.now().toString(), symbol: symbol.toUpperCase() }
-                        ],
-                    };
-                }
-                return list;
-            })
-        );
+        try {
+            // Add stock to watchlist via API
+            await axios.post(`/api/watchlists/${activeWatchlist}/stocks`, {
+                symbol: symbol.toUpperCase()
+            });
 
-        setIsAddingStock(false);
+            // Refresh watchlists to get updated data
+            const response = await axios.get('/api/watchlists');
+            setWatchlists(response.data);
 
-        toast.success('Success',{
-            description: `Added ${symbol} to watchlist`,
-        });
+            setIsAddingStock(false);
+            toast.success('Success',{
+                description: `Added ${symbol} to watchlist`,
+            });
+        } catch (error) {
+            console.error('Error adding stock:', error);
+            toast.error('Error', {
+                description: 'Failed to add stock to watchlist'
+            });
+            setIsAddingStock(false);
+        }
     };
 
-    const handleRemoveStock = (stockId: string) => {
+    const handleRemoveStock = async (stockId: string) => {
         if (!activeWatchlist) return;
 
-        setStockToDelete(null);
-        setWatchlists(prev =>
-            prev.map(list => {
-                if (list.id === activeWatchlist) {
-                    return {
-                        ...list,
-                        stocks: list.stocks.filter(stock => stock.id !== stockId),
-                    };
-                }
-                return list;
-            })
-        );
+        try {
+            // Remove stock from watchlist via API
+            await axios.delete(`/api/watchlists/${activeWatchlist}/stocks/${stockId}`);
 
-        toast.success('Success',{
-            description: 'Stock removed from watchlist'
-        });
+            // Update local state
+            setWatchlists(prev =>
+                prev.map(list => {
+                    if (list.id === activeWatchlist) {
+                        return {
+                            ...list,
+                            stocks: list.stocks.filter(stock => stock.id !== stockId),
+                        };
+                    }
+                    return list;
+                })
+            );
+
+            setStockToDelete(null);
+            toast.success('Success',{
+                description: 'Stock removed from watchlist'
+            });
+        } catch (error) {
+            console.error('Error removing stock:', error);
+            toast.error('Error', {
+                description: 'Failed to remove stock from watchlist'
+            });
+        }
     };
 
-    const handleDeleteWatchlist = (watchlistId: string) => {
-        setListToDelete(null);
-        setWatchlists(prev => prev.filter(list => list.id !== watchlistId));
+    const handleDeleteWatchlist = async (watchlistId: string) => {
+        try {
+            // Delete watchlist via API
+            await axios.delete(`/api/watchlists/${watchlistId}`);
 
-        // If the deleted watchlist was active, select another one
-        if (activeWatchlist === watchlistId) {
-            const remaining = watchlists.filter(list => list.id !== watchlistId);
-            setActiveWatchlist(remaining.length > 0 ? remaining[0].id : null);
+            setListToDelete(null);
+            setWatchlists(prev => prev.filter(list => list.id !== watchlistId));
+
+            // If the deleted watchlist was active, select another one
+            if (activeWatchlist === watchlistId) {
+                const remaining = watchlists.filter(list => list.id !== watchlistId);
+                setActiveWatchlist(remaining.length > 0 ? remaining[0].id : null);
+            }
+
+            toast.success('Success',{
+                description: 'Watchlist deleted'
+            });
+        } catch (error) {
+            console.error('Error deleting watchlist:', error);
+            toast.error('Error', {
+                description: 'Failed to delete watchlist'
+            });
         }
-
-        toast.success('Success',{
-            description: 'Watchlist deleted'
-        });
     };
 
     const handleRefresh = () => {

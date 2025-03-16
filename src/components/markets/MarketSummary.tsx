@@ -3,39 +3,9 @@
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Mock data for market summary
-const US_MARKET_SUMMARY = {
-    sectorPerformance: [
-        { name: 'Technology', value: 34, change: 1.8 },
-        { name: 'Financial', value: 15, change: 0.3 },
-        { name: 'Healthcare', value: 13, change: 0.7 },
-        { name: 'Consumer Cyclical', value: 10, change: 1.2 },
-        { name: 'Industrial', value: 9, change: 0.5 },
-        { name: 'Communication', value: 8, change: 1.4 },
-        { name: 'Energy', value: 4, change: -1.4 },
-        { name: 'Consumer Defensive', value: 4, change: 0.2 },
-        { name: 'Real Estate', value: 2, change: -0.8 },
-        { name: 'Utilities', value: 1, change: -0.3 },
-    ],
-    advanceDecline: {
-        advances: 312,
-        declines: 189,
-        unchanged: 14,
-        newHighs: 42,
-        newLows: 18,
-        advanceVolume: 678.4, // in millions
-        declineVolume: 423.6, // in millions
-    },
-    marketStats: {
-        totalVolume: 1102, // in millions
-        avgVolume: 1258, // in millions
-        avgAdvance: 1.4, // percent
-        avgDecline: -1.1, // percent
-        medianPE: 21.2,
-        medianDivYield: 1.8, // percent
-    }
-};
+import { stockService } from '@/services/api';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 // Colors for pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#6A6AFF', '#FFD700', '#A569BD'];
@@ -45,24 +15,91 @@ interface MarketSummaryProps {
     className?: string;
 }
 
+interface SectorPerformance {
+    name: string;
+    value: number;
+    change: number;
+}
+
+interface AdvanceDecline {
+    advances: number;
+    declines: number;
+    unchanged: number;
+    newHighs: number;
+    newLows: number;
+    advanceVolume: number;
+    declineVolume: number;
+}
+
+interface MarketStats {
+    totalVolume: number;
+    avgVolume: number;
+    avgAdvance: number;
+    avgDecline: number;
+    medianPE: number;
+    medianDivYield: number;
+}
+
+interface MarketSummaryData {
+    sectorPerformance: SectorPerformance[];
+    advanceDecline: AdvanceDecline;
+    marketStats: MarketStats;
+}
+
 export default function MarketSummary({ market, className = '' }: MarketSummaryProps) {
-    const [summaryData, setSummaryData] = useState<typeof US_MARKET_SUMMARY | null>(null);
+    const [summaryData, setSummaryData] = useState<MarketSummaryData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchMarketSummary = async () => {
             setIsLoading(true);
             try {
-                // This would be an API call in a real app
-                // const data = await stockService.getMarketSummary(market);
-
-                // For demo, use mock data
-                setTimeout(() => {
-                    setSummaryData(US_MARKET_SUMMARY);
-                    setIsLoading(false);
-                }, 800);
+                // Call the real API for market summary data
+                const data = await stockService.getMarketSummary(market);
+                setSummaryData(data);
             } catch (error) {
                 console.error(`Error fetching market summary for ${market}:`, error);
+                setError('Failed to load market data');
+                toast.error('Error', {
+                    description: 'Failed to load market summary data'
+                });
+
+                // As a fallback, use some mock data
+                const mockData = {
+                    sectorPerformance: [
+                        { name: 'Technology', value: 34, change: 1.8 },
+                        { name: 'Financial', value: 15, change: 0.3 },
+                        { name: 'Healthcare', value: 13, change: 0.7 },
+                        { name: 'Consumer Cyclical', value: 10, change: 1.2 },
+                        { name: 'Industrial', value: 9, change: 0.5 },
+                        { name: 'Communication', value: 8, change: 1.4 },
+                        { name: 'Energy', value: 4, change: -1.4 },
+                        { name: 'Consumer Defensive', value: 4, change: 0.2 },
+                        { name: 'Real Estate', value: 2, change: -0.8 },
+                        { name: 'Utilities', value: 1, change: -0.3 },
+                    ],
+                    advanceDecline: {
+                        advances: 312,
+                        declines: 189,
+                        unchanged: 14,
+                        newHighs: 42,
+                        newLows: 18,
+                        advanceVolume: 678.4,
+                        declineVolume: 423.6,
+                    },
+                    marketStats: {
+                        totalVolume: 1102,
+                        avgVolume: 1258,
+                        avgAdvance: 1.4,
+                        avgDecline: -1.1,
+                        medianPE: 21.2,
+                        medianDivYield: 1.8,
+                    }
+                };
+
+                setSummaryData(mockData);
+            } finally {
                 setIsLoading(false);
             }
         };
@@ -80,8 +117,16 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-64 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                        </div>
+                        <Skeleton className="h-64 w-full" />
                     </div>
                 </CardContent>
             </Card>
@@ -120,7 +165,7 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                     <div>
                         <h3 className="text-lg font-medium mb-4">Sector Performance</h3>
                         <div className="space-y-2">
-                            {summaryData.sectorPerformance.map((sector: { name: string; value: number; change: number }) => (
+                            {summaryData.sectorPerformance.map((sector) => (
                                 <div key={sector.name} className="flex justify-between items-center">
                                     <div className="flex items-center">
                                         <div
@@ -131,8 +176,8 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                                         <span className="text-muted-foreground text-xs ml-2">{sector.value}%</span>
                                     </div>
                                     <span className={sector.change >= 0 ? 'text-green-500' : 'text-red-500'}>
-                    {sector.change >= 0 ? '+' : ''}{sector.change}%
-                  </span>
+                                        {sector.change >= 0 ? '+' : ''}{sector.change}%
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -152,7 +197,7 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                                     paddingAngle={2}
                                     dataKey="value"
                                 >
-                                    {summaryData.sectorPerformance.map((_entry: { name: string; value: number; change: number }, index: number) => (
+                                    {summaryData.sectorPerformance.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -201,8 +246,8 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">A/D Ratio</span>
                                 <span className="font-medium">
-                  {(summaryData.advanceDecline.advances / summaryData.advanceDecline.declines).toFixed(2)}
-                </span>
+                                    {(summaryData.advanceDecline.advances / summaryData.advanceDecline.declines).toFixed(2)}
+                                </span>
                             </div>
                         </div>
 

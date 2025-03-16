@@ -66,6 +66,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
             setError(null);
 
             try {
+                // Call the real API to search for stocks
                 const results = await stockService.searchQuotes(query);
 
                 if (results && Array.isArray(results)) {
