@@ -12,10 +12,7 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-
-import { stockService } from '@/services/api';
 
 // Generate mock data for charts since we can't always fetch real data
 const generateMockData = (days: number, startValue: number, volatility: number = 0.01) => {

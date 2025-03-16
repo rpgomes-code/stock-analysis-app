@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTheme } from '@/components/theme/ThemeProvider';
 
@@ -38,7 +38,6 @@ interface AppearanceSettingsProps {
 }
 
 export default function AppearanceSettings({ user }: AppearanceSettingsProps) {
-    const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -77,17 +76,10 @@ export default function AppearanceSettings({ user }: AppearanceSettingsProps) {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            toast({
-                title: 'Appearance settings updated',
-                description: 'Your appearance preferences have been saved.',
-            });
+            toast.success('Appearance settings updated');
         } catch (error) {
             console.error('Error updating appearance settings:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to update appearance settings. Please try again.',
-                variant: 'destructive',
-            });
+            toast.error('Failed to update appearance settings.');
         } finally {
             setIsLoading(false);
         }

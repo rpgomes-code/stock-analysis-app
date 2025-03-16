@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Form schema validation
@@ -52,7 +52,6 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ user }: ProfileFormProps) {
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     // Default form values
@@ -85,16 +84,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            toast({
-                title: 'Profile updated',
+            toast.success('Profile updated', {
                 description: 'Your profile has been updated successfully.',
             });
         } catch (error) {
             console.error('Error updating profile:', error);
-            toast({
-                title: 'Error',
+            toast.error('Error', {
                 description: 'Failed to update profile. Please try again.',
-                variant: 'destructive',
             });
         } finally {
             setIsLoading(false);

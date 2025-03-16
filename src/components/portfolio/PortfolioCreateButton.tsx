@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner"
 
 interface PortfolioCreateButtonProps {
     userId: string;
@@ -25,7 +25,6 @@ interface PortfolioCreateButtonProps {
 
 export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonProps) {
     const router = useRouter();
-    const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [portfolioName, setPortfolioName] = useState('');
     const [portfolioDescription, setPortfolioDescription] = useState('');
@@ -33,11 +32,7 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
 
     const handleCreatePortfolio = async () => {
         if (!portfolioName.trim()) {
-            toast({
-                title: 'Error',
-                description: 'Portfolio name is required',
-                variant: 'destructive',
-            });
+            toast.error('Portfolio name is required');
             return;
         }
 

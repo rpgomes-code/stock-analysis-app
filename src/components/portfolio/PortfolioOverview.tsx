@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LineChart, BarChart, PieChart, ArrowUpRight, ArrowDownRight, AlertTriangle } from 'lucide-react';
+import {LineChart, BarChart, PieChart, ArrowUpRight, ArrowDownRight, AlertTriangle, PlusCircle} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     ResponsiveContainer,
     PieChart as RechartsPieChart,
@@ -17,9 +15,7 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
 } from 'recharts';
-import { stockService } from '@/services/api';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -115,7 +111,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
         return (
             <div className="text-center py-12">
                 <h2 className="text-xl font-semibold mb-4">No Portfolio Data Available</h2>
-                <p className="text-muted-foreground mb-8">You haven't created any portfolios yet or haven't added any stocks to your portfolios.</p>
+                <p className="text-muted-foreground mb-8">You haven&#39;t created any portfolios yet or haven&#39;t added any stocks to your portfolios.</p>
                 <Button asChild>
                     <Link href="/portfolio/create">
                         <PlusCircle className="h-4 w-4 mr-2" />
@@ -153,7 +149,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Today's Change
+                            Today&#39;s Change
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

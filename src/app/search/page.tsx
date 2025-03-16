@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search as SearchIcon, XCircle, TrendingUp, Building2, Briefcase, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search as SearchIcon, XCircle, TrendingUp, Building2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { stockService } from '@/services/api';
 
 export default function SearchPage() {
     const router = useRouter();

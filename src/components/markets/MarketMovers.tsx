@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { stockService } from '@/services/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Mock data for market movers
 const US_MARKET_MOVERS = {

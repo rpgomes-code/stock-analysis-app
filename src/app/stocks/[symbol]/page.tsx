@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, Building, Plus, Star, Newspaper } from 'lucide-react';
+import { ChevronLeft, Building, Star, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 import StockChart from '@/components/StockChart';
 import FinancialData from '@/components/FinancialData';

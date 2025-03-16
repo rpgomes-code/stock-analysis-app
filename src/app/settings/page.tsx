@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
-import { Settings, User, Mail, Bell, Shield, Trash2, Github, Key, LineChart } from 'lucide-react';
+import { Settings, User, Mail, Bell, Shield, Key, LineChart } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { requireAuth, getCurrentUser } from '@/lib/auth';

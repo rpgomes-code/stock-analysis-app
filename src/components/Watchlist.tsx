@@ -4,7 +4,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -17,13 +16,13 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ChevronUp, ChevronDown, RefreshCw, Star, StarOff } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown, RefreshCw, Star } from 'lucide-react';
 import { stockService } from '@/services/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StockSearch from './StockSearch';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface WatchlistProps {
@@ -47,7 +46,6 @@ interface StockItem {
 
 const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const router = useRouter();
-    const { toast } = useToast();
     const [watchlists, setWatchlists] = useState<WatchlistItem[]>([]);
     const [activeWatchlist, setActiveWatchlist] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -88,10 +86,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
                 }
             } catch (error) {
                 console.error('Error fetching watchlists:', error);
-                toast({
-                    title: 'Error',
+                toast.error('Error',{
                     description: 'Failed to load watchlists',
-                    variant: 'destructive',
                 });
             } finally {
                 setIsLoading(false);
@@ -142,10 +138,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
                 );
             } catch (error) {
                 console.error('Error fetching stock data:', error);
-                toast({
-                    title: 'Error',
+                toast.error('Error',{
                     description: 'Failed to update stock prices',
-                    variant: 'destructive',
                 });
             } finally {
                 setIsRefreshing(false);
@@ -157,10 +151,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
 
     const handleCreateWatchlist = () => {
         if (!newWatchlistName.trim()) {
-            toast({
-                title: 'Error',
+            toast.error('Error',{
                 description: 'Please enter a watchlist name',
-                variant: 'destructive',
             });
             return;
         }
@@ -176,8 +168,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         setActiveWatchlist(newWatchlist.id);
         setNewWatchlistName('');
 
-        toast({
-            title: 'Success',
+        toast.success('Success',{
             description: `Watchlist "${newWatchlistName}" created`,
         });
     };
@@ -188,10 +179,10 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         // Check if the stock is already in the watchlist
         const watchlist = watchlists.find(w => w.id === activeWatchlist);
         if (watchlist?.stocks.some(s => s.symbol.toUpperCase() === symbol.toUpperCase())) {
-            toast({
-                title: 'Info',
+            toast.info('Info',{
                 description: `${symbol} is already in this watchlist`,
             });
+
             setIsAddingStock(false);
             return;
         }
@@ -213,8 +204,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         );
 
         setIsAddingStock(false);
-        toast({
-            title: 'Success',
+
+        toast.success('Success',{
             description: `Added ${symbol} to watchlist`,
         });
     };
@@ -234,9 +225,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
             })
         );
 
-        toast({
-            title: 'Success',
-            description: 'Stock removed from watchlist',
+        toast.success('Success',{
+            description: 'Stock removed from watchlist'
         });
     };
 
@@ -249,9 +239,8 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
             setActiveWatchlist(remaining.length > 0 ? remaining[0].id : null);
         }
 
-        toast({
-            title: 'Success',
-            description: 'Watchlist deleted',
+        toast.success('Success',{
+            description: 'Watchlist deleted'
         });
     };
 
@@ -311,7 +300,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
                     <div className="flex justify-center py-8">Loading watchlists...</div>
                 ) : watchlists.length === 0 ? (
                     <div className="text-center py-8">
-                        <p className="text-muted-foreground mb-4">You don't have any watchlists yet</p>
+                        <p className="text-muted-foreground mb-4">You don&#39;t have any watchlists yet</p>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button>

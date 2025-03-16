@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import {
     LineChart,
     Line,
-    AreaChart,
-    Area,
     BarChart,
     Bar,
     XAxis,
@@ -15,14 +13,12 @@ import {
     Legend,
     ResponsiveContainer,
     ComposedChart,
-    Scatter
+    Scatter, PieChart, Pie
 } from 'recharts';
 import { addDays, format, subMonths, subYears, parseISO } from 'date-fns';
-import { TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, Wallet, DollarSign, BarChart as BarChartIcon, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Calendar, DollarSign, BarChart as BarChartIcon, AlertTriangle } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {

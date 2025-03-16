@@ -3,8 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,

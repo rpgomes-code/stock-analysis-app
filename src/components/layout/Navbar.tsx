@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Session } from 'next-auth';
 import { signOut } from 'next-auth/react';
-import { LineChart, User, Search, LogOut, Home, BarChart3, Briefcase, Settings, Menu, X } from 'lucide-react';
+import { LineChart, Search, LogOut, Home, BarChart3, Briefcase, Settings, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
