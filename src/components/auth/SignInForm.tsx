@@ -81,12 +81,12 @@ export function SignInForm() {
     // Social sign-in handlers
     const handleGoogleSignIn = () => {
         setIsLoading(true);
-        signIn("google", { callbackUrl });
+        signIn("google", {callbackUrl}).then(() => {});
     };
 
     const handleGithubSignIn = () => {
         setIsLoading(true);
-        signIn("github", { callbackUrl });
+        signIn("github", {callbackUrl}).then(() => {});
     };
 
     return (

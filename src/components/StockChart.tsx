@@ -40,7 +40,12 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
     const [interval, setInterval] = useState('1d');
     const [isLoading, setIsLoading] = useState(false);
     const [selectedTab, setSelectedTab] = useState('price');
-    const [stockInfo, setStockInfo] = useState<any>(null);
+    interface StockInfo {
+        shortName?: string;
+        longName?: string;
+        [key: string]: string | number | undefined;
+    }
+    const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
 
     // Periods for the selector
     const periods = [
@@ -66,7 +71,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
         { value: '1mo', label: '1 Month' },
     ];
 
-    // Filter appropriate intervals based on selected period
+    // Filter appropriate intervals based on a selected period
     const getValidIntervals = () => {
         if (['1d', '5d'].includes(period)) {
             return intervals.filter(i => ['1m', '5m', '15m', '30m', '60m'].includes(i.value));
@@ -89,7 +94,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                 });
 
                 // Process data for the chart
-                const processedData = historyData.map((item: any) => ({
+                const processedData = historyData.map((item: { Date: string; Open: number; High: number; Low: number; Close: number; Volume: number }) => ({
                     date: format(new Date(item.Date), interval === '1d' ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm'),
                     open: item.Open,
                     high: item.High,
@@ -113,7 +118,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
         };
 
         if (symbol) {
-            fetchData();
+            fetchData().then(() => {});
         }
     }, [symbol, period, interval]);
 
@@ -155,16 +160,16 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
                                 <p className="text-xl font-bold">${data[data.length - 1].close.toFixed(2)}</p>
                                 <div
                                     className={`text-sm flex items-center justify-end ${
-                                        parseFloat(performance.value) >= 0 ? 'text-green-500' : 'text-red-500'
+                                        (typeof performance.value === 'string' ? parseFloat(performance.value) : performance.value) >= 0 ? 'text-green-500' : 'text-red-500'
                                     }`}
                                 >
-                                    {parseFloat(performance.value) >= 0 ? (
+                                    {Number(performance.value) >= 0 ? (
                                         <ChevronUp className="h-4 w-4" />
                                     ) : (
                                         <ChevronDown className="h-4 w-4" />
                                     )}
                                     <span>
-                    {parseFloat(performance.value) >= 0 ? '+' : ''}
+                    {Number(performance.value) >= 0 ? '+' : ''}
                                         {performance.value} ({performance.percent}%)
                   </span>
                                 </div>

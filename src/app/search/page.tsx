@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search as SearchIcon, XCircle, TrendingUp, Building2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
@@ -19,7 +19,28 @@ export default function SearchPage() {
     const initialQuery = searchParams.get('q') || '';
 
     const [searchQuery, setSearchQuery] = useState(initialQuery);
-    const [searchResults, setSearchResults] = useState<any | null>(null);
+    interface SearchResults {
+        quotes: {
+            symbol: string;
+            name: string;
+            exchange: string;
+            price: number;
+            change: number;
+            percentChange: number;
+        }[];
+        sectors: {
+            name: string;
+            description: string;
+            stockCount: number;
+        }[];
+        news: {
+            title: string;
+            date: string;
+            source: string;
+        }[];
+    }
+
+    const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,10 +61,10 @@ export default function SearchPage() {
         }
     }, []);
 
-    // Search on component mount if query provided in URL
+    // Search on component mount if a query provided in URL
     useEffect(() => {
         if (initialQuery) {
-            performSearch(initialQuery);
+            performSearch(initialQuery).then(() => {});
         }
     }, [initialQuery]);
 
@@ -131,7 +152,7 @@ export default function SearchPage() {
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        performSearch(searchQuery);
+        performSearch(searchQuery).then(() => {});
     };
 
     // Handle input change
@@ -149,7 +170,7 @@ export default function SearchPage() {
     // Handle recent search click
     const handleRecentSearchClick = (query: string) => {
         setSearchQuery(query);
-        performSearch(query);
+        performSearch(query).then(() => {});
     };
 
     return (
@@ -268,7 +289,7 @@ export default function SearchPage() {
                                         </Button>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {searchResults.quotes.slice(0, 3).map((stock: any) => (
+                                        {searchResults.quotes.slice(0, 3).map((stock: { symbol: string; name: string; exchange: string; price: number; percentChange: number }) => (
                                             <Link href={`/stocks/${stock.symbol}`} key={stock.symbol}>
                                                 <Card className="h-full hover:shadow-md transition-shadow">
                                                     <CardContent className="p-4">
@@ -297,7 +318,7 @@ export default function SearchPage() {
                                     </div>
                                 </div>
 
-                                {/* Sectors preview */}
+                                {/* Sector preview */}
                                 {searchResults.sectors.length > 0 && (
                                     <div>
                                         <div className="flex justify-between items-center mb-4">
@@ -307,7 +328,7 @@ export default function SearchPage() {
                                             </Button>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {searchResults.sectors.slice(0, 3).map((sector: any, index: number) => (
+                                            {searchResults.sectors.slice(0, 3).map((sector: { name: string; description: string; stockCount: number }, index: number) => (
                                                 <Card key={index} className="hover:shadow-md transition-shadow h-full">
                                                     <CardContent className="p-4">
                                                         <div className="flex flex-col">
@@ -341,7 +362,7 @@ export default function SearchPage() {
                                         <Card>
                                             <CardContent className="p-4">
                                                 <ul className="divide-y">
-                                                    {searchResults.news.slice(0, 3).map((news: any, index: number) => (
+                                                    {searchResults.news.slice(0, 3).map((news: { title: string; source: string; date: string }, index: number) => (
                                                         <li key={index} className="py-3 first:pt-0 last:pb-0">
                                                             <h4 className="font-medium">{news.title}</h4>
                                                             <div className="flex items-center text-xs text-muted-foreground mt-1">
@@ -369,7 +390,7 @@ export default function SearchPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="divide-y">
-                                            {searchResults.quotes.map((stock: any) => (
+                                            {searchResults.quotes.map((stock: { symbol: string; name: string; exchange: string; price: number; percentChange: number }) => (
                                                 <Link
                                                     href={`/stocks/${stock.symbol}`}
                                                     key={stock.symbol}
@@ -413,7 +434,7 @@ export default function SearchPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {searchResults.sectors.map((sector: any, index: number) => (
+                                            {searchResults.sectors.map((sector: { name: string; description: string; stockCount: number }, index: number) => (
                                                 <Card key={index} className="hover:shadow-md transition-shadow">
                                                     <CardContent className="p-4">
                                                         <div className="flex items-start">
@@ -445,7 +466,7 @@ export default function SearchPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            {searchResults.news.map((news: any, index: number) => (
+                                            {searchResults.news.map((news: { title: string; source: string; date: string }, index: number) => (
                                                 <div key={index} className="border-b pb-4 last:border-none last:pb-0">
                                                     <h4 className="font-medium text-lg">{news.title}</h4>
                                                     <div className="flex items-center text-sm text-muted-foreground mt-1">

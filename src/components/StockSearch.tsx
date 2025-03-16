@@ -49,9 +49,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
                 const results = await stockService.searchQuotes(query);
 
                 if (results && Array.isArray(results)) {
-                    const formattedResults = results.map((item: any) => ({
-                        symbol: item.symbol,
-                        shortname: item.shortname || item.symbol,
+                    const formattedResults = results.map((item: Partial<SearchResult>) => ({
+                        symbol: item.symbol || '',
+                        shortname: item.shortname || item.symbol || '',
                         longname: item.longname,
                         exchDisp: item.exchDisp,
                         typeDisp: item.typeDisp,

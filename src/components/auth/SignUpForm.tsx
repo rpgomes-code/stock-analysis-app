@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +42,7 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 export function SignUpForm() {
-    const router = useRouter();
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
@@ -81,7 +80,9 @@ export function SignUpForm() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Failed to create account");
+                console.error(data);
+                toast.error('Error',{ description: "Failed to create account" });
+                return;
             }
 
             // Show success message or redirect
@@ -100,8 +101,12 @@ export function SignUpForm() {
                 });
             }, 1500);
 
-        } catch (error: any) {
-            setError(error.message || "An unexpected error occurred");
+        } catch (error) {
+            if (error instanceof Error) {
+                setError(error.message || "An unexpected error occurred");
+            } else {
+                setError("An unexpected error occurred");
+            }
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -111,12 +116,12 @@ export function SignUpForm() {
     // Social sign-in handlers
     const handleGoogleSignIn = () => {
         setIsLoading(true);
-        signIn("google", { callbackUrl: "/" });
+        signIn("google", {callbackUrl: "/"}).then(() => {});
     };
 
     const handleGithubSignIn = () => {
         setIsLoading(true);
-        signIn("github", { callbackUrl: "/" });
+        signIn("github", {callbackUrl: "/"}).then(() => {});
     };
 
     return (

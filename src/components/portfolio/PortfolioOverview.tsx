@@ -90,7 +90,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
             }
         };
 
-        fetchPortfolioData();
+        fetchPortfolioData().then(() => {});
     }, [userId]);
 
     if (isLoading) {
@@ -290,7 +290,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
                                         nameKey="symbol"
                                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
                                     >
-                                        {portfolioData.holdings.map((entry, index) => (
+                                        {portfolioData.holdings.map((_entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>

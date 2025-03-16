@@ -25,8 +25,8 @@ export default function AuthErrorPage({
 }) {
     const { error } = searchParams;
 
-    let errorMessage = "An unknown error occurred during authentication.";
-    let errorTitle = "Authentication Error";
+    let errorMessage: string;
+    let errorTitle: string;
 
     switch (error) {
         case "OAuthSignin":

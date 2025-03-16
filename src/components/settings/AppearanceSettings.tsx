@@ -34,12 +34,14 @@ const appearanceFormSchema = z.object({
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
 interface AppearanceSettingsProps {
-    user: any;
+    user: { id: string; name: string; email: string } | null;
 }
 
 export default function AppearanceSettings({ user }: AppearanceSettingsProps) {
     const { theme, setTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
+
+    console.log(user); // Placeholder usage of the `user` prop
 
     // Default form values
     const defaultValues: Partial<AppearanceFormValues> = {

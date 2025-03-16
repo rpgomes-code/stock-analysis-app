@@ -46,7 +46,7 @@ interface MarketSummaryProps {
 }
 
 export default function MarketSummary({ market, className = '' }: MarketSummaryProps) {
-    const [summaryData, setSummaryData] = useState<any>(null);
+    const [summaryData, setSummaryData] = useState<typeof US_MARKET_SUMMARY | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -67,7 +67,7 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
             }
         };
 
-        fetchMarketSummary();
+        fetchMarketSummary().then(() => {});
     }, [market]);
 
     if (isLoading) {
@@ -120,7 +120,7 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                     <div>
                         <h3 className="text-lg font-medium mb-4">Sector Performance</h3>
                         <div className="space-y-2">
-                            {summaryData.sectorPerformance.map((sector: any) => (
+                            {summaryData.sectorPerformance.map((sector: { name: string; value: number; change: number }) => (
                                 <div key={sector.name} className="flex justify-between items-center">
                                     <div className="flex items-center">
                                         <div
@@ -152,7 +152,7 @@ export default function MarketSummary({ market, className = '' }: MarketSummaryP
                                     paddingAngle={2}
                                     dataKey="value"
                                 >
-                                    {summaryData.sectorPerformance.map((entry: any, index: number) => (
+                                    {summaryData.sectorPerformance.map((_entry: { name: string; value: number; change: number }, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>

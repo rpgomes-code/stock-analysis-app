@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Moon, Sun, SunMoon } from "lucide-react";
 
 export function ThemeToggle() {
-    const { theme, setTheme } = useTheme();
+    const { setTheme } = useTheme();
 
     return (
         <DropdownMenu>

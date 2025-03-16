@@ -95,7 +95,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
         };
 
         if (userId) {
-            fetchWatchlists();
+            fetchWatchlists().then(() => {});
         }
     }, [userId]);
 
@@ -146,7 +146,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
             }
         };
 
-        fetchStockData();
+        fetchStockData().then(() => {});
     }, [activeWatchlist, watchlists]);
 
     const handleCreateWatchlist = () => {
@@ -254,9 +254,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const handleStockClick = (symbol: string) => {
         router.push(`/stocks/${symbol}`);
     };
-
-    const activeList = watchlists.find(list => list.id === activeWatchlist);
-
+    watchlists.find(list => list.id === activeWatchlist);
     return (
         <Card className="w-full shadow-md">
             <CardHeader className="pb-2">

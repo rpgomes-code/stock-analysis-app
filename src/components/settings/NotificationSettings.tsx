@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
 // Form schema validation
@@ -38,12 +38,18 @@ const notificationFormSchema = z.object({
 type NotificationFormValues = z.infer<typeof notificationFormSchema>;
 
 interface NotificationSettingsProps {
-    user: any;
+    user: {
+        id: string;
+        email: string;
+        name?: string;
+        preferences?: Partial<NotificationFormValues>;
+    };
 }
 
 export default function NotificationSettings({ user }: NotificationSettingsProps) {
-    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+
+    console.log(user); // Use the user prop for debugging or remove if unnecessary
 
     // Mock existing user notification settings
     const defaultValues: Partial<NotificationFormValues> = {
@@ -66,7 +72,7 @@ export default function NotificationSettings({ user }: NotificationSettingsProps
     });
 
     // Form submission handler
-    async function onSubmit(data: NotificationFormValues) {
+    async function onSubmit() {
         setIsLoading(true);
 
         try {
@@ -76,22 +82,19 @@ export default function NotificationSettings({ user }: NotificationSettingsProps
             //   headers: {
             //     'Content-Type': 'application/json',
             //   },
-            //   body: JSON.stringify(data),
+            //   body: JSON.stringify(form.getValues()),
             // });
 
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            toast({
-                title: 'Notification settings updated',
+            toast.success('Notification settings updated', {
                 description: 'Your notification preferences have been saved.',
             });
         } catch (error) {
             console.error('Error updating notification settings:', error);
-            toast({
-                title: 'Error',
+            toast.error('Error', {
                 description: 'Failed to update notification settings. Please try again.',
-                variant: 'destructive',
             });
         } finally {
             setIsLoading(false);

@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, {NextAuthOptions} from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
         GoogleProvider({
@@ -69,7 +69,7 @@ export const authOptions = {
     callbacks: {
         async session({ session, token }) {
             if (token && session.user) {
-                session.user.id = token.sub;
+                (session.user as { id?: string }).id = token.sub;
             }
             return session;
         },
@@ -83,4 +83,4 @@ export const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export { handler as POST };

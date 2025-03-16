@@ -1,28 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { stockService } from '@/services/api';
-import { DollarSign, TrendingUp, BarChart2, BarChart } from 'lucide-react';
+import React, {useEffect, useState} from 'react';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/components/ui/card';
+import {Tabs, TabsList, TabsTrigger,} from '@/components/ui/tabs';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
+import {Button} from '@/components/ui/button';
+import {Skeleton} from '@/components/ui/skeleton';
+import {stockService} from '@/services/api';
+import {BarChart, BarChart2, DollarSign, TrendingUp} from 'lucide-react';
 
 interface FinancialDataProps {
     symbol: string;
@@ -30,9 +13,14 @@ interface FinancialDataProps {
 
 const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
     const [activeTab, setActiveTab] = useState('income');
-    const [incomeData, setIncomeData] = useState<any[]>([]);
-    const [balanceData, setBalanceData] = useState<any[]>([]);
-    const [cashFlowData, setCashFlowData] = useState<any[]>([]);
+    interface FinancialData {
+        date: string;
+        [key: string]: string | number | null;
+    }
+
+    const [incomeData, setIncomeData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
+    const [balanceData, setBalanceData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
+    const [cashFlowData, setCashFlowData] = useState<{ annual: FinancialData[]; quarterly: FinancialData[] } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAnnual, setIsAnnual] = useState(true);
 
@@ -75,13 +63,13 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
         };
 
         if (symbol) {
-            fetchFinancialData();
+            fetchFinancialData().then(() => {});
         }
     }, [symbol]);
 
     // Helper function to process financial data
-    const processFinancialData = (data: any) => {
-        if (!data || !Array.isArray(data)) return [];
+    const processFinancialData = (data: Record<string, Record<string, string | number | null>>) => {
+        if (!data || typeof data !== 'object') return [];
 
         // Convert to array format with proper date sorting
         const processed = Object.entries(data).map(([key, value]) => ({
@@ -121,11 +109,11 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
 
         switch (activeTab) {
             case 'income':
-                return incomeData && incomeData[period] ? incomeData[period] : [];
+                return incomeData && incomeData[period as 'annual' | 'quarterly'] ? incomeData[period as 'annual' | 'quarterly'] : [];
             case 'balance':
-                return balanceData && balanceData[period] ? balanceData[period] : [];
+                return balanceData && balanceData[period as 'annual' | 'quarterly'] ? balanceData[period as 'annual' | 'quarterly'] : [];
             case 'cashflow':
-                return cashFlowData && cashFlowData[period] ? cashFlowData[period] : [];
+                return cashFlowData && cashFlowData[period as 'annual' | 'quarterly'] ? cashFlowData[period as 'annual' | 'quarterly'] : [];
             default:
                 return [];
         }
@@ -171,11 +159,9 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
 
         // Get available columns from data and filter to only show important ones
         const availableColumns = Object.keys(data[0] || {});
-        const filteredColumns = availableColumns.filter(col =>
+        return availableColumns.filter(col =>
             keyMetrics[activeTab as keyof typeof keyMetrics].includes(col) || commonColumns.includes(col)
         );
-
-        return filteredColumns;
     };
 
     // Get human-readable column names
@@ -301,8 +287,8 @@ const FinancialData: React.FC<FinancialDataProps> = ({ symbol }) => {
                                                         day: 'numeric',
                                                     })
                                                     : column === 'EPS'
-                                                        ? formatNumber(row[column]).replace('$', '')
-                                                        : formatNumber(row[column])}
+                                                        ? row[column] !== null ? formatNumber(row[column]).replace('$', '') : ''
+                                                        : row[column] !== null ? formatNumber(row[column]) : ''}
                                             </TableCell>
                                         ))}
                                     </TableRow>

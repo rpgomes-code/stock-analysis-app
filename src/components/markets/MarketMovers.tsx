@@ -30,7 +30,16 @@ interface MarketMoversProps {
 }
 
 export default function MarketMovers({ market, direction, title }: MarketMoversProps) {
-    const [moversData, setMoversData] = useState<any[]>([]);
+    interface StockData {
+        symbol: string;
+        name: string;
+        price: number;
+        change: number;
+        percentChange: number;
+        volume: number;
+    }
+
+    const [moversData, setMoversData] = useState<StockData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -55,7 +64,7 @@ export default function MarketMovers({ market, direction, title }: MarketMoversP
             }
         };
 
-        fetchMarketMovers();
+        fetchMarketMovers().then(() => {});
     }, [market, direction]);
 
     const defaultTitle = direction === 'up' ? 'Top Gainers' : 'Top Losers';

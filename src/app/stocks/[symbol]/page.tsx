@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -378,7 +378,7 @@ async function NewsItems({ symbol }: { symbol: string }) {
 
         return (
             <div className="space-y-4">
-                {news.slice(0, 5).map((item: any, index: number) => (
+                {news.slice(0, 5).map((item: { link: string; title: string; publisher: string; providerPublishTime: number }, index: number) => (
                     <a
                         key={index}
                         href={item.link}
@@ -430,7 +430,7 @@ const NewsItemSkeleton = ({ count = 3 }: { count?: number }) => (
 );
 
 // Helpers for formatting
-function formatMetric(value: any, type: 'currency' | 'percent' | 'default' = 'default'): string {
+function formatMetric(value: number, type: 'currency' | 'percent' | 'default' = 'default'): string {
     if (value === undefined || value === null) return '—';
 
     if (type === 'currency') {
@@ -442,11 +442,7 @@ function formatMetric(value: any, type: 'currency' | 'percent' | 'default' = 'de
     }
 
     // For numeric values, format based on size
-    if (typeof value === 'number') {
-        return formatNumber(value);
-    }
-
-    return String(value);
+    return formatNumber(value);
 }
 
 function formatCurrency(value: number): string {

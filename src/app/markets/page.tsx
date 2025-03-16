@@ -48,22 +48,22 @@ async function getMarketIndices() {
     // This is mocked data
     return {
         us: [
-            { symbol: '^GSPC', name: 'S&P 500', value: 5,123.47, change: 38.54, percentChange: 0.76 },
-            { symbol: '^DJI', name: 'Dow Jones', value: 38,654.89, change: 124.21, percentChange: 0.32 },
-            { symbol: '^IXIC', name: 'NASDAQ', value: 16,021.34, change: 162.41, percentChange: 1.02 },
-            { symbol: '^RUT', name: 'Russell 2000', value: 2,024.36, change: 12.84, percentChange: 0.64 },
+            { symbol: '^GSPC', name: 'S&P 500', value: 5123.47, change: 38.54, percentChange: 0.76 },
+            { symbol: '^DJI', name: 'Dow Jones', value: 38654.89, change: 124.21, percentChange: 0.32 },
+            { symbol: '^IXIC', name: 'NASDAQ', value: 16021.34, change: 162.41, percentChange: 1.02 },
+            { symbol: '^RUT', name: 'Russell 2000', value: 2024.36, change: 12.84, percentChange: 0.64 },
             { symbol: '^VIX', name: 'VIX', value: 14.73, change: -1.21, percentChange: -7.59 },
         ],
         global: [
-            { symbol: '^FTSE', name: 'FTSE 100', value: 7,648.98, change: -16.23, percentChange: -0.21 },
-            { symbol: '^GDAXI', name: 'DAX', value: 17,842.92, change: 76.57, percentChange: 0.43 },
-            { symbol: '^FCHI', name: 'CAC 40', value: 7,928.45, change: 34.82, percentChange: 0.44 },
-            { symbol: '^N225', name: 'Nikkei 225', value: 39,098.68, change: 435.12, percentChange: 1.12 },
-            { symbol: '^HSI', name: 'Hang Seng', value: 16,512.92, change: -134.45, percentChange: -0.81 },
+            { symbol: '^FTSE', name: 'FTSE 100', value: 7648.98, change: -16.23, percentChange: -0.21 },
+            { symbol: '^GDAXI', name: 'DAX', value: 17842.92, change: 76.57, percentChange: 0.43 },
+            { symbol: '^FCHI', name: 'CAC 40', value: 7928.45, change: 34.82, percentChange: 0.44 },
+            { symbol: '^N225', name: 'Nikkei 225', value: 39098.68, change: 435.12, percentChange: 1.12 },
+            { symbol: '^HSI', name: 'Hang Seng', value: 16512.92, change: -134.45, percentChange: -0.81 },
         ],
         crypto: [
-            { symbol: 'BTC-USD', name: 'Bitcoin', value: 61,234.78, change: 1,432.56, percentChange: 2.34 },
-            { symbol: 'ETH-USD', name: 'Ethereum', value: 3,452.19, change: 64.53, percentChange: 1.87 },
+            { symbol: 'BTC-USD', name: 'Bitcoin', value: 61234.78, change: 1432.56, percentChange: 2.34 },
+            { symbol: 'ETH-USD', name: 'Ethereum', value: 3452.19, change: 64.53, percentChange: 1.87 },
             { symbol: 'SOL-USD', name: 'Solana', value: 132.45, change: 7.54, percentChange: 5.68 },
             { symbol: 'ADA-USD', name: 'Cardano', value: 0.48, change: -0.02, percentChange: -4.12 },
             { symbol: 'DOGE-USD', name: 'Dogecoin', value: 0.12, change: 0.01, percentChange: 8.33 },
@@ -127,7 +127,7 @@ export default async function MarketsPage() {
                             <div className="flex items-center justify-between md:justify-start md:space-x-4">
                                 <div className="flex flex-col">
                                     <span className="text-sm font-medium">US Markets</span>
-                                    <Badge variant={marketStatus.us.isOpen ? "success" : "secondary"} className="w-fit mt-1">
+                                    <Badge variant={marketStatus.us.isOpen ? "default" : "secondary"} className="w-fit mt-1">
                                         {marketStatus.us.isOpen ? 'Open' : 'Closed'}
                                     </Badge>
                                 </div>

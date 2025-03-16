@@ -90,7 +90,7 @@ interface PortfolioListProps {
 
 export default function PortfolioList({ userId }: PortfolioListProps) {
     const router = useRouter();
-    const [portfolios, setPortfolios] = useState<any[]>([]);
+    const [portfolios, setPortfolios] = useState<typeof MOCK_PORTFOLIOS>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [portfolioToDelete, setPortfolioToDelete] = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                 // const response = await fetch(`/api/portfolio/list?userId=${userId}`);
                 // const data = await response.json();
 
-                // For demo purposes, we'll use the mock data
+                // For demo, we'll use the mock data
                 setTimeout(() => {
                     setPortfolios(MOCK_PORTFOLIOS);
                     setIsLoading(false);
@@ -121,7 +121,7 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
             }
         };
 
-        fetchPortfolios();
+        fetchPortfolios().then(() => {});
     }, [userId]);
 
     // Handle portfolio deletion

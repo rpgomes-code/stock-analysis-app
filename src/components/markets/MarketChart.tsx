@@ -53,8 +53,8 @@ interface MarketChartProps {
 
 export default function MarketChart({ symbol, name }: MarketChartProps) {
     const [period, setPeriod] = useState('1m');
-    const [chartData, setChartData] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [chartData, setChartData] = useState<{ date: string; value: number }[]>([]);
+    const [, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchMarketData = async () => {
@@ -107,7 +107,7 @@ export default function MarketChart({ symbol, name }: MarketChartProps) {
             }
         };
 
-        fetchMarketData();
+        fetchMarketData().then(() => {});
     }, [symbol, period]);
 
     // Format numbers for the tooltip
@@ -134,7 +134,7 @@ export default function MarketChart({ symbol, name }: MarketChartProps) {
     };
 
     const changes = calculateChanges();
-    const isPositive = parseFloat(changes.change) >= 0;
+    const isPositive = Number(changes.change) >= 0;
 
     return (
         <Card>

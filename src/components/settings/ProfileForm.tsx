@@ -48,7 +48,12 @@ const profileFormSchema = z.object({
 });
 
 interface ProfileFormProps {
-    user: any;
+    user: {
+        name?: string;
+        username?: string;
+        bio?: string;
+        image?: string;
+    };
 }
 
 export default function ProfileForm({ user }: ProfileFormProps) {
@@ -72,6 +77,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         setIsLoading(true);
 
         try {
+            console.log('Form data submitted:', data);
+
             // In a real app, this would be an API call
             // await fetch('/api/user/profile', {
             //   method: 'PATCH',

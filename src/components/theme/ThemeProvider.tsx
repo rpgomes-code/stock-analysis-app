@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -58,7 +58,7 @@ export function ThemeProvider({
 
         if (disableTransitionOnChange) {
             // Force a reflow
-            window.getComputedStyle(root).color;
+            void window.getComputedStyle(root).color;
             root.classList.remove("disable-transitions");
         }
     }, [theme, systemTheme, attribute, disableTransitionOnChange]);

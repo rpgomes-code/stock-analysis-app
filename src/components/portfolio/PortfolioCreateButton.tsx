@@ -39,23 +39,23 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
         setIsCreating(true);
         try {
             // This would be an API call to create a new portfolio
-            // const response = await fetch('/api/portfolio', {
-            //   method: 'POST',
-            //   headers: {
-            //     'Content-Type': 'application/json',
-            //   },
-            //   body: JSON.stringify({
-            //     userId,
-            //     name: portfolioName,
-            //     description: portfolioDescription,
-            //   }),
-            // });
+            const response = await fetch('/api/portfolio', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId,
+                name: portfolioName,
+                description: portfolioDescription,
+              }),
+            });
 
             // const data = await response.json();
 
-            // For demo, we'll simulate a successful creation
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const mockPortfolioId = Math.random().toString(36).substring(2, 15);
+            // Uncomment the actual API call to use userId and remove the mock code below
+                    const data = await response.json();
+                    const mockPortfolioId = data.id;
 
             // Reset form and close dialog
             setPortfolioName('');
@@ -63,8 +63,7 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
             setIsOpen(false);
 
             // Show success toast
-            toast({
-                title: 'Success',
+            toast.success('Success',{
                 description: 'Portfolio created successfully',
             });
 
@@ -74,10 +73,8 @@ export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonP
             router.refresh();
         } catch (error) {
             console.error('Failed to create portfolio:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to create portfolio. Please try again.',
-                variant: 'destructive',
+            toast.error('Error',{
+                description: 'Failed to create portfolio. Please try again.'
             });
         } finally {
             setIsCreating(false);

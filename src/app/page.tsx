@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import StockSearch from '@/components/StockSearch';
 import Watchlist from '@/components/Watchlist';

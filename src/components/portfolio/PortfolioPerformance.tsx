@@ -13,7 +13,8 @@ import {
     Legend,
     ResponsiveContainer,
     ComposedChart,
-    Scatter, PieChart, Pie
+    Scatter, PieChart, Pie,
+    Cell
 } from 'recharts';
 import { addDays, format, subMonths, subYears, parseISO } from 'date-fns';
 import { TrendingUp, Calendar, DollarSign, BarChart as BarChartIcon, AlertTriangle } from 'lucide-react';
@@ -152,11 +153,30 @@ interface PortfolioPerformanceProps {
 }
 
 export default function PortfolioPerformance({ userId }: PortfolioPerformanceProps) {
-    const [performanceData, setPerformanceData] = useState<any[] | null>(null);
-    const [monthlyReturnsData, setMonthlyReturnsData] = useState<any[] | null>(null);
-    const [assetAllocationData, setAssetAllocationData] = useState<any[] | null>(null);
-    const [sectorPerformanceData, setSectorPerformanceData] = useState<any[] | null>(null);
-    const [riskReturnData, setRiskReturnData] = useState<any[] | null>(null);
+    type PerformanceData = Record<string, unknown>;
+    const [performanceData, setPerformanceData] = useState<PerformanceData[] | null>(null);
+    interface MonthlyReturnData {
+        month: string;
+        returns: number;
+    }
+    const [monthlyReturnsData, setMonthlyReturnsData] = useState<MonthlyReturnData[] | null>(null);
+    interface AssetAllocationData {
+        name: string;
+        value: number;
+    }
+    const [assetAllocationData, setAssetAllocationData] = useState<AssetAllocationData[] | null>(null);
+    interface SectorPerformanceData {
+        name: string;
+        returns: number;
+    }
+    const [sectorPerformanceData, setSectorPerformanceData] = useState<SectorPerformanceData[] | null>(null);
+    interface RiskReturnData {
+        name: string;
+        risk: number;
+        returns: number;
+        value: number;
+    }
+    const [riskReturnData, setRiskReturnData] = useState<RiskReturnData[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [timeRange, setTimeRange] = useState('1y');
@@ -187,7 +207,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
             }
         };
 
-        fetchPerformanceData();
+        fetchPerformanceData().then(() => {});
     }, [userId, timeRange]);
 
     // Handle time range change
@@ -251,15 +271,6 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
         }).format(value);
     };
 
-    // Format percentage values
-    const formatPercent = (value: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'percent',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(value / 100);
-    };
-
     return (
         <div className="space-y-6">
             {/* Time period selector */}
@@ -298,7 +309,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                     <div className="h-[400px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
-                                data={performanceData}
+                                data={performanceData || undefined}
                                 margin={{
                                     top: 5,
                                     right: 30,
@@ -420,7 +431,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                         <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
-                                    data={monthlyReturnsData}
+                                    data={monthlyReturnsData || []}
                                     margin={{
                                         top: 5,
                                         right: 30,
@@ -438,8 +449,12 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                                     <Bar
                                         dataKey="returns"
                                         name="Monthly Return"
-                                        fill={(data) => data.returns >= 0 ? '#82ca9d' : '#ff8042'}
-                                    />
+                                        fill="#82ca9d"
+                                    >
+                                        {monthlyReturnsData?.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.returns >= 0 ? '#82ca9d' : '#ff8042'} />
+                                        ))}
+                                    </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -456,7 +471,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={assetAllocationData}
+                                        data={assetAllocationData || []}
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
@@ -466,7 +481,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                                         nameKey="name"
                                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                     >
-                                        {assetAllocationData?.map((entry, index) => (
+                                        {assetAllocationData?.map((_entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
@@ -487,7 +502,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     layout="vertical"
-                                    data={sectorPerformanceData}
+                                    data={sectorPerformanceData || []}
                                     margin={{
                                         top: 5,
                                         right: 30,
@@ -502,7 +517,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                                     <Bar
                                         dataKey="returns"
                                         name="Sector Return"
-                                        fill={(data) => data.returns >= 0 ? '#82ca9d' : '#ff8042'}
+                                        fill="#82ca9d"
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -519,7 +534,7 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                         <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart
-                                    data={riskReturnData}
+                                    data={riskReturnData || []}
                                     margin={{
                                         top: 20,
                                         right: 20,
@@ -553,10 +568,10 @@ export default function PortfolioPerformance({ userId }: PortfolioPerformancePro
                                     />
                                     <Scatter
                                         name="Stocks"
-                                        data={riskReturnData}
+                                        data={riskReturnData || []}
                                         fill="#8884d8"
                                         shape="circle"
-                                        dataKey={(entry: any) => entry.value / 250}
+                                        dataKey={(entry: { value: number }) => entry.value / 250}
                                     />
                                 </ComposedChart>
                             </ResponsiveContainer>

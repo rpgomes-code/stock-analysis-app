@@ -224,8 +224,9 @@ export default function Navbar({ session }: NavbarProps) {
                                                 variant="outline"
                                                 className="flex items-center"
                                                 onClick={() => {
-                                                    signOut({ callbackUrl: '/' });
-                                                    closeSheet();
+                                                    signOut({callbackUrl: '/'}).then(() => {
+                                                        closeSheet();
+                                                    });
                                                 }}
                                             >
                                                 <LogOut className="h-4 w-4 mr-2" />

@@ -67,8 +67,12 @@ export async function POST(req: Request) {
             },
             { status: 201 }
         );
-    } catch (error: any) {
-        logger.error(`Registration error: ${error.message}`, { error });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            logger.error(`Registration error: ${error.message}`, { error });
+        } else {
+            logger.error("Registration error: An unknown error occurred", { error });
+        }
         return NextResponse.json(
             { message: "An error occurred during registration" },
             { status: 500 }
