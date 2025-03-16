@@ -2,7 +2,7 @@ services:
   # NextJS Frontend Application
   frontend:
     build:
-      context: ./stock-analysis-app
+      context: ../../NextJs/stock-analysis-app/
       dockerfile: Dockerfile
     container_name: stock-analysis-frontend
     restart: unless-stopped
@@ -23,7 +23,7 @@ services:
   # YFinance API Service (Your existing API)
   api:
     build:
-      context: ../Python/stock-finder-api/
+      context: ../../Python/stock-finder-api/
       dockerfile: Dockerfile
     container_name: yfinance-api
     restart: unless-stopped
