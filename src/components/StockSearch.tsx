@@ -1,4 +1,5 @@
-// src/components/StockSearch.tsx
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Info } from 'lucide-react';
 import { stockService } from '@/services/api';
