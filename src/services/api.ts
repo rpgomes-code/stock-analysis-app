@@ -1,6 +1,7 @@
+// src/services/api.ts - Updated
 import axios from 'axios';
 
-// Create an axios instance
+// Create an axios instance that points to your yfinance wrapper API
 const apiClient = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     headers: {
@@ -8,7 +9,17 @@ const apiClient = axios.create({
     },
 });
 
-// API methods
+// Add request interceptor for handling errors
+apiClient.interceptors.response.use(
+    response => response,
+    error => {
+        // Log errors for debugging
+        console.error('API request error:', error);
+        return Promise.reject(error);
+    }
+);
+
+// API methods for stock data
 export const stockService = {
     // Ticker information
     async getTickerInfo(ticker: string) {
@@ -32,7 +43,7 @@ export const stockService = {
         return response.data;
     },
 
-    // Ticker finance data
+    // Financial data endpoints
     async getTickerFinancials(ticker: string) {
         const response = await apiClient.get(`/v1/ticker/${ticker}/financials`);
         return response.data;
@@ -95,6 +106,11 @@ export const stockService = {
 
     async getMarketSummary(market: string = 'us') {
         const response = await apiClient.get(`/v1/market/${market}/summary`);
+        return response.data;
+    },
+
+    async getMarketMovers(market: string, direction: 'gainers' | 'losers') {
+        const response = await apiClient.get(`/v1/market/${market}/movers/${direction}`);
         return response.data;
     },
 
