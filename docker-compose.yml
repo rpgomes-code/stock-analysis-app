@@ -1,0 +1,78 @@
+services:
+  # NextJS Frontend Application
+  frontend:
+    build:
+      context: ./stock-analysis-app
+      dockerfile: Dockerfile
+    container_name: stock-analysis-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://api:8000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/stock_analysis
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=your-secret-key-here
+    depends_on:
+      - api
+      - postgres
+    networks:
+      - stock-analysis-network
+
+  # YFinance API Service (Your existing API)
+  api:
+    build:
+      context: ../Python/stock-finder-api/
+      dockerfile: Dockerfile
+    container_name: yfinance-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+    depends_on:
+      - redis
+    networks:
+      - stock-analysis-network
+
+  # Redis for API caching
+  redis:
+    image: redis:7-alpine
+    container_name: stock-analysis-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - stock-analysis-network
+
+  # PostgreSQL Database for User Data
+  postgres:
+    image: postgres:15-alpine
+    container_name: stock-analysis-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=stock_analysis
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - stock-analysis-network
+
+networks:
+  stock-analysis-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
