@@ -1,3 +1,4 @@
+// src/components/Watchlist.tsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -5,7 +6,7 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle,
+    CardTitle
 } from '@/components/ui/card';
 import {
     Table,
@@ -16,14 +17,45 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ChevronUp, ChevronDown, RefreshCw, Star } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown, RefreshCw, Star, AlertTriangle, InfoIcon } from 'lucide-react';
 import { stockService } from '@/services/api';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogDescription,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StockSearch from './StockSearch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import {
+    Alert,
+    AlertTitle,
+    AlertDescription,
+} from '@/components/ui/alert';
+import {
+    ScrollArea,
+    ScrollBar,
+} from '@/components/ui/scroll-area';
 
 interface WatchlistProps {
     userId: string;
@@ -52,6 +84,9 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [newWatchlistName, setNewWatchlistName] = useState('');
     const [isAddingStock, setIsAddingStock] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [stockToDelete, setStockToDelete] = useState<string | null>(null);
+    const [listToDelete, setListToDelete] = useState<string | null>(null);
 
     // Fetch user's watchlists
     useEffect(() => {
@@ -213,6 +248,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const handleRemoveStock = (stockId: string) => {
         if (!activeWatchlist) return;
 
+        setStockToDelete(null);
         setWatchlists(prev =>
             prev.map(list => {
                 if (list.id === activeWatchlist) {
@@ -231,6 +267,7 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     };
 
     const handleDeleteWatchlist = (watchlistId: string) => {
+        setListToDelete(null);
         setWatchlists(prev => prev.filter(list => list.id !== watchlistId));
 
         // If the deleted watchlist was active, select another one
@@ -254,60 +291,54 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
     const handleStockClick = (symbol: string) => {
         router.push(`/stocks/${symbol}`);
     };
-    watchlists.find(list => list.id === activeWatchlist);
-    return (
-        <Card className="w-full shadow-md">
-            <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                    <CardTitle>Watchlists</CardTitle>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-1" /> New List
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Create a new watchlist</DialogTitle>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right">
-                                        Name
-                                    </Label>
-                                    <Input
-                                        id="name"
-                                        value={newWatchlistName}
-                                        onChange={(e) => setNewWatchlistName(e.target.value)}
-                                        className="col-span-3"
-                                        placeholder="My Watchlist"
-                                    />
-                                </div>
-                            </div>
-                            <Button onClick={handleCreateWatchlist}>Create Watchlist</Button>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                <CardDescription>
-                    Track your favorite stocks
-                </CardDescription>
-            </CardHeader>
 
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center py-8">Loading watchlists...</div>
-                ) : watchlists.length === 0 ? (
-                    <div className="text-center py-8">
-                        <p className="text-muted-foreground mb-4">You don&#39;t have any watchlists yet</p>
+    const currentWatchlist = watchlists.find(list => list.id === activeWatchlist);
+
+    const renderLoadingSkeleton = () => (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-9 w-28" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+            <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    );
+
+    const formatVolume = (volume?: number) => {
+        if (!volume) return '—';
+
+        if (volume >= 1_000_000) {
+            return `${(volume / 1_000_000).toFixed(2)}M`;
+        } else if (volume >= 1_000) {
+            return `${(volume / 1_000).toFixed(2)}K`;
+        }
+
+        return volume.toString();
+    };
+
+    return (
+        <TooltipProvider>
+            <Card className="w-full shadow-md">
+                <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                        <CardTitle>Watchlists</CardTitle>
                         <Dialog>
                             <DialogTrigger asChild>
-                                <Button>
-                                    <Plus className="h-4 w-4 mr-2" /> Create your first watchlist
+                                <Button variant="outline" size="sm">
+                                    <Plus className="h-4 w-4 mr-1" /> New List
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>Create a new watchlist</DialogTitle>
+                                    <DialogDescription>
+                                        Enter a name for your new watchlist to keep track of stocks you&#39;re interested in.
+                                    </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">
@@ -323,144 +354,302 @@ const Watchlist: React.FC<WatchlistProps> = ({ userId }) => {
                                         />
                                     </div>
                                 </div>
-                                <Button onClick={handleCreateWatchlist}>Create Watchlist</Button>
+                                <DialogFooter>
+                                    <Button onClick={handleCreateWatchlist} disabled={!newWatchlistName.trim()}>
+                                        Create Watchlist
+                                    </Button>
+                                </DialogFooter>
                             </DialogContent>
                         </Dialog>
                     </div>
-                ) : (
-                    <>
-                        <Tabs value={activeWatchlist || ''} onValueChange={setActiveWatchlist} className="w-full">
-                            <TabsList className="grid grid-flow-col auto-cols-max gap-2 overflow-x-auto justify-start mb-4 w-full">
-                                {watchlists.map((list) => (
-                                    <TabsTrigger key={list.id} value={list.id} className="flex items-center gap-2">
-                                        <Star className="h-4 w-4" /> {list.name}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 ml-1 text-muted-foreground"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteWatchlist(list.id);
-                                            }}
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </TabsTrigger>
-                                ))}
-                            </TabsList>
+                    <CardDescription>
+                        Track your favorite stocks
+                    </CardDescription>
+                </CardHeader>
 
-                            {watchlists.map((list) => (
-                                <TabsContent key={list.id} value={list.id} className="mt-0">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-medium">{list.name}</h3>
-                                        <div className="flex space-x-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleRefresh}
-                                                disabled={isRefreshing}
-                                            >
-                                                <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                                Refresh
-                                            </Button>
-                                            <Dialog open={isAddingStock} onOpenChange={setIsAddingStock}>
-                                                <DialogTrigger asChild>
-                                                    <Button size="sm">
-                                                        <Plus className="h-4 w-4 mr-1" /> Add Stock
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Add a stock to {list.name}</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="py-4">
-                                                        <StockSearch onSelect={handleAddStock} />
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
+                <CardContent>
+                    {isLoading ? (
+                        renderLoadingSkeleton()
+                    ) : watchlists.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Alert variant="default" className="max-w-md mx-auto mb-6">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>No Watchlists</AlertTitle>
+                                <AlertDescription>You don&#39;t have any watchlists yet. Create your first one to start tracking stocks.</AlertDescription>
+                            </Alert>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" /> Create your first watchlist
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Create a new watchlist</DialogTitle>
+                                        <DialogDescription>
+                                            Enter a name for your first watchlist.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="name" className="text-right">
+                                                Name
+                                            </Label>
+                                            <Input
+                                                id="name"
+                                                value={newWatchlistName}
+                                                onChange={(e) => setNewWatchlistName(e.target.value)}
+                                                className="col-span-3"
+                                                placeholder="My Watchlist"
+                                            />
                                         </div>
                                     </div>
+                                    <DialogFooter>
+                                        <Button onClick={handleCreateWatchlist} disabled={!newWatchlistName.trim()}>
+                                            Create Watchlist
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    ) : (
+                        <>
+                            <ScrollArea className="w-full">
+                                <Tabs value={activeWatchlist || ''} onValueChange={setActiveWatchlist} className="w-full">
+                                    <TabsList className="flex grid-flow-col auto-cols-max gap-2 overflow-x-auto justify-start mb-4 w-full">
+                                        {watchlists.map((list) => (
+                                            <TabsTrigger key={list.id} value={list.id} className="flex items-center gap-2">
+                                                <Star className="h-4 w-4" /> {list.name}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 ml-1 text-muted-foreground"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setListToDelete(list.id);
+                                                                setDeleteConfirmOpen(true);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Delete watchlist</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                    <ScrollBar orientation="horizontal" />
 
-                                    {list.stocks.length === 0 ? (
-                                        <div className="text-center py-8">
-                                            <p className="text-muted-foreground mb-4">No stocks in this watchlist yet</p>
-                                            <Button onClick={() => setIsAddingStock(true)}>
-                                                <Plus className="h-4 w-4 mr-2" /> Add your first stock
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Symbol</TableHead>
-                                                    <TableHead className="text-right">Price</TableHead>
-                                                    <TableHead className="text-right">Change</TableHead>
-                                                    <TableHead className="text-right">% Change</TableHead>
-                                                    <TableHead className="text-right">Volume</TableHead>
-                                                    <TableHead></TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {list.stocks.map((stock) => (
-                                                    <TableRow key={stock.id} className="cursor-pointer" onClick={() => handleStockClick(stock.symbol)}>
-                                                        <TableCell className="font-medium">{stock.symbol}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            ${stock.currentPrice?.toFixed(2) || '—'}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            {stock.priceChange ? (
-                                                                <span className={stock.priceChange >= 0 ? 'text-green-500' : 'text-red-500'}>
-                                  {stock.priceChange >= 0 ? '+' : ''}
-                                                                    {stock.priceChange.toFixed(2)}
-                                </span>
-                                                            ) : '—'}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            {stock.percentChange ? (
-                                                                <span className={stock.percentChange >= 0 ? 'text-green-500' : 'text-red-500'}>
-                                  {stock.percentChange >= 0 ? (
-                                      <ChevronUp className="h-4 w-4 inline" />
-                                  ) : (
-                                      <ChevronDown className="h-4 w-4 inline" />
-                                  )}
-                                                                    {Math.abs(stock.percentChange).toFixed(2)}%
-                                </span>
-                                                            ) : '—'}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            {stock.volume ? (
-                                                                stock.volume >= 1000000 ?
-                                                                    `${(stock.volume / 1000000).toFixed(2)}M` :
-                                                                    stock.volume >= 1000 ?
-                                                                        `${(stock.volume / 1000).toFixed(2)}K` :
-                                                                        stock.volume
-                                                            ) : '—'}
-                                                        </TableCell>
-                                                        <TableCell>
+                                    {watchlists.map((list) => (
+                                        <TabsContent key={list.id} value={list.id} className="mt-0">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="text-lg font-medium">{list.name}</h3>
+                                                <div className="flex space-x-2">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
                                                             <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="opacity-50 hover:opacity-100"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleRemoveStock(stock.id);
-                                                                }}
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={handleRefresh}
+                                                                disabled={isRefreshing}
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                                                Refresh
                                                             </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    )}
-                                </TabsContent>
-                            ))}
-                        </Tabs>
-                    </>
-                )}
-            </CardContent>
-        </Card>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Update stock prices</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <Dialog open={isAddingStock} onOpenChange={setIsAddingStock}>
+                                                        <DialogTrigger asChild>
+                                                            <Button size="sm">
+                                                                <Plus className="h-4 w-4 mr-1" /> Add Stock
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Add a stock to {list.name}</DialogTitle>
+                                                                <DialogDescription>
+                                                                    Search for a stock by name or symbol to add it to your watchlist.
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="py-4">
+                                                                <StockSearch onSelect={handleAddStock} />
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                </div>
+                                            </div>
+
+                                            {list.stocks.length === 0 ? (
+                                                <Alert className="mb-4">
+                                                    <InfoIcon className="h-4 w-4" />
+                                                    <AlertTitle>Empty Watchlist</AlertTitle>
+                                                    <AlertDescription>
+                                                        No stocks in this watchlist yet. Click &#34;Add Stock&#34; to get started.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            ) : isRefreshing ? (
+                                                <div className="space-y-2 py-4">
+                                                    <Skeleton className="h-10 w-full" />
+                                                    {list.stocks.map((_, index) => (
+                                                        <Skeleton key={index} className="h-12 w-full" />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-md border overflow-hidden">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Symbol</TableHead>
+                                                                <TableHead className="text-right">Price</TableHead>
+                                                                <TableHead className="text-right">Change</TableHead>
+                                                                <TableHead className="text-right">% Change</TableHead>
+                                                                <TableHead className="text-right">Volume</TableHead>
+                                                                <TableHead></TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {list.stocks.map((stock) => (
+                                                                <TableRow
+                                                                    key={stock.id}
+                                                                    className="cursor-pointer hover:bg-muted/50"
+                                                                    onClick={() => handleStockClick(stock.symbol)}
+                                                                >
+                                                                    <TableCell className="font-medium">
+                                                                        <HoverCard>
+                                                                            <HoverCardTrigger className="cursor-pointer">
+                                                                                {stock.symbol}
+                                                                            </HoverCardTrigger>
+                                                                            <HoverCardContent className="w-80">
+                                                                                <div className="flex justify-between">
+                                                                                    <div>
+                                                                                        <h4 className="font-bold">{stock.symbol}</h4>
+                                                                                        <p className="text-sm text-muted-foreground mt-1">Click to view detailed stock data</p>
+                                                                                    </div>
+                                                                                    <Button variant="outline" size="sm" onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        router.push(`/stocks/${stock.symbol}`);
+                                                                                    }}>
+                                                                                        View Details
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </HoverCardContent>
+                                                                        </HoverCard>
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        ${stock.currentPrice?.toFixed(2) || '—'}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        {stock.priceChange ? (
+                                                                            <span className={stock.priceChange >= 0 ? 'text-green-500' : 'text-red-500'}>
+                                                                                {stock.priceChange >= 0 ? '+' : ''}
+                                                                                {stock.priceChange.toFixed(2)}
+                                                                            </span>
+                                                                        ) : '—'}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        {stock.percentChange ? (
+                                                                            <Badge variant={stock.percentChange >= 0 ? "default" : "destructive"} className="ml-auto">
+                                                                                {stock.percentChange >= 0 ? (
+                                                                                    <ChevronUp className="h-4 w-4 mr-1" />
+                                                                                ) : (
+                                                                                    <ChevronDown className="h-4 w-4 mr-1" />
+                                                                                )}
+                                                                                {Math.abs(stock.percentChange).toFixed(2)}%
+                                                                            </Badge>
+                                                                        ) : '—'}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        {formatVolume(stock.volume)}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="opacity-50 hover:opacity-100"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setStockToDelete(stock.id);
+                                                                                        setDeleteConfirmOpen(true);
+                                                                                    }}
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <p>Remove from watchlist</p>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            )}
+                                        </TabsContent>
+                                    ))}
+                                </Tabs>
+                            </ScrollArea>
+
+                            {currentWatchlist && currentWatchlist.stocks.length > 0 && (
+                                <div className="mt-6">
+                                    <Separator className="my-2" />
+                                    <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
+                                        <span>Total stocks: {currentWatchlist.stocks.length}</span>
+                                        <span>Last refreshed: {new Date().toLocaleTimeString()}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </CardContent>
+
+                {/* Confirmation Dialogs */}
+                <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Confirm Deletion</DialogTitle>
+                            <DialogDescription>
+                                {stockToDelete
+                                    ? "Are you sure you want to remove this stock from your watchlist?"
+                                    : "Are you sure you want to delete this watchlist? This action cannot be undone."}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => {
+                                setDeleteConfirmOpen(false);
+                                setStockToDelete(null);
+                                setListToDelete(null);
+                            }}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    if (stockToDelete) {
+                                        handleRemoveStock(stockToDelete);
+                                    } else if (listToDelete) {
+                                        handleDeleteWatchlist(listToDelete);
+                                    }
+                                    setDeleteConfirmOpen(false);
+                                }}
+                            >
+                                Delete
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </Card>
+        </TooltipProvider>
     );
 };
 

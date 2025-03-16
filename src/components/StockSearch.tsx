@@ -1,5 +1,6 @@
+// src/components/StockSearch.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Info } from 'lucide-react';
 import { stockService } from '@/services/api';
 import debounce from 'lodash/debounce';
 
@@ -17,6 +18,21 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface StockSearchProps {
     onSelect: (symbol: string) => void;
@@ -34,6 +50,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
 
     // Create a debounced search function
@@ -41,10 +58,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
         debounce(async (query: string) => {
             if (!query || query.length < 2) {
                 setSearchResults([]);
+                setError(null);
                 return;
             }
 
             setIsLoading(true);
+            setError(null);
+
             try {
                 const results = await stockService.searchQuotes(query);
 
@@ -63,6 +83,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
             } catch (error) {
                 console.error('Error searching stocks:', error);
                 setSearchResults([]);
+                setError('Failed to fetch search results. Please try again.');
             } finally {
                 setIsLoading(false);
             }
@@ -88,72 +109,157 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
     const clearSearch = () => {
         setSearchQuery('');
         setSearchResults([]);
+        setError(null);
+    };
+
+    const getResultTypeColor = (type?: string) => {
+        if (!type) return "default";
+        switch (type.toLowerCase()) {
+            case 'equity': return "default";
+            case 'etf': return "secondary";
+            case 'index': return "outline";
+            default: return "default";
+        }
     };
 
     return (
         <div className="w-full max-w-md">
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <div className="relative w-full">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="text"
-                            placeholder="Search for a stock..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                if (e.target.value.length > 0) {
-                                    setOpen(true);
-                                }
-                            }}
-                            className="pl-9 pr-10"
-                        />
-                        {searchQuery && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-1 top-1 h-7 w-7 p-0"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    clearSearch();
+            <TooltipProvider>
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <div className="relative w-full">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Search for a stock..."
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    if (e.target.value.length > 0) {
+                                        setOpen(true);
+                                    }
                                 }}
-                            >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Clear</span>
-                            </Button>
-                        )}
-                    </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                        <CommandInput
-                            placeholder="Search for a stock..."
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                        />
-                        <CommandEmpty>
-                            {isLoading ? 'Searching...' : 'No stocks found.'}
-                        </CommandEmpty>
-                        <CommandGroup>
-                            {searchResults.map((stock) => (
-                                <CommandItem
-                                    key={stock.symbol}
-                                    onSelect={() => handleSelectStock(stock)}
-                                    className="flex justify-between"
+                                className="pl-9 pr-10"
+                            />
+                            {searchQuery ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-1 top-1 h-7 w-7 p-0"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        clearSearch();
+                                    }}
                                 >
-                                    <div className="flex items-center">
-                                        <span className="font-bold">{stock.symbol}</span>
-                                        <span className="ml-2 text-muted-foreground">{stock.shortname}</span>
+                                    <X className="h-4 w-4" />
+                                    <span className="sr-only">Clear</span>
+                                </Button>
+                            ) : (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-1 top-1 h-7 w-7 p-0 opacity-70"
+                                        >
+                                            <Info className="h-4 w-4" />
+                                            <span className="sr-only">Search Tips</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Search by company name or ticker symbol</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                            <CommandInput
+                                placeholder="Search for a stock..."
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                            />
+                            {isLoading ? (
+                                <div className="p-4 flex items-center justify-center">
+                                    <div className="space-y-2 w-full">
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-10 w-full" />
+                                        <Skeleton className="h-10 w-full" />
+                                        <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <span className="text-xs text-muted-foreground">
-                                        {stock.exchDisp}
-                                    </span>
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </Command>
-                </PopoverContent>
-            </Popover>
+                                </div>
+                            ) : error ? (
+                                <div className="p-2">
+                                    <Alert variant="destructive">
+                                        <AlertDescription>{error}</AlertDescription>
+                                    </Alert>
+                                </div>
+                            ) : (
+                                <>
+                                    <CommandEmpty>
+                                        No stocks found. Try a different search term.
+                                    </CommandEmpty>
+                                    <CommandGroup heading="Search Results">
+                                        {searchResults.map((stock) => (
+                                            <HoverCard key={stock.symbol}>
+                                                <HoverCardTrigger asChild>
+                                                    <CommandItem
+                                                        onSelect={() => handleSelectStock(stock)}
+                                                        className="flex justify-between"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <span className="font-bold">{stock.symbol}</span>
+                                                            <span className="ml-2 text-muted-foreground truncate max-w-[150px]">
+                                                                {stock.shortname}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            {stock.typeDisp && (
+                                                                <Badge variant={getResultTypeColor(stock.typeDisp)} className="mr-2">
+                                                                    {stock.typeDisp}
+                                                                </Badge>
+                                                            )}
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {stock.exchDisp}
+                                                            </span>
+                                                        </div>
+                                                    </CommandItem>
+                                                </HoverCardTrigger>
+                                                <HoverCardContent className="w-80">
+                                                    <div className="space-y-2">
+                                                        <h4 className="text-sm font-semibold">{stock.symbol} - {stock.shortname}</h4>
+                                                        {stock.longname && stock.longname !== stock.shortname && (
+                                                            <p className="text-sm">{stock.longname}</p>
+                                                        )}
+                                                        <Separator />
+                                                        <div className="flex justify-between">
+                                                            <span className="text-xs text-muted-foreground">Exchange</span>
+                                                            <span className="text-xs font-medium">{stock.exchDisp || 'Unknown'}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-xs text-muted-foreground">Type</span>
+                                                            <span className="text-xs font-medium">{stock.typeDisp || 'Stock'}</span>
+                                                        </div>
+                                                    </div>
+                                                </HoverCardContent>
+                                            </HoverCard>
+                                        ))}
+                                    </CommandGroup>
+                                    {searchResults.length > 0 && (
+                                        <>
+                                            <Separator className="my-1" />
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                Press Enter to select
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+            </TooltipProvider>
         </div>
     );
 };
