@@ -12,7 +12,8 @@ import {
     TrendingDown,
     CircleDollarSign,
     CalendarClock,
-    AlertTriangle
+    AlertTriangle,
+    Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -230,16 +231,21 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
     // Render empty state
     if (portfolios.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-                <h2 className="text-2xl font-bold mb-2">No Portfolios Yet</h2>
-                <p className="text-muted-foreground max-w-md mb-6">
-                    Create your first portfolio to start tracking your investments and analyzing performance.
-                </p>
-                <Button asChild>
-                    <Link href="/portfolio/create">Create Your First Portfolio</Link>
-                </Button>
-            </div>
+            <Card className="w-full">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h2 className="text-2xl font-bold mb-2">No Portfolios Yet</h2>
+                    <p className="text-muted-foreground max-w-md mb-6">
+                        Create your first portfolio to start tracking your investments and analyzing performance.
+                    </p>
+                    <Button asChild>
+                        <Link href="/portfolio/create">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Your First Portfolio
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
         );
     }
 
@@ -280,10 +286,10 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                                     </div>
                                 ) : (
                                     <>
-                    <span className="flex items-center">
-                      <Briefcase className="h-5 w-5 mr-2" />
-                        {portfolio.name}
-                    </span>
+                                        <span className="flex items-center">
+                                          <Briefcase className="h-5 w-5 mr-2" />
+                                            {portfolio.name}
+                                        </span>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -305,7 +311,7 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
-                                                    className="text-red-600 focus:text-red-600"
+                                                    className="text-destructive focus:text-destructive"
                                                     onClick={() => {
                                                         setPortfolioToDelete(portfolio.id);
                                                         setIsDeleteDialogOpen(true);
@@ -326,53 +332,53 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                         <CardContent className="pb-2">
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground mb-1 flex items-center">
-                    <CircleDollarSign className="h-3 w-3 mr-1" />
-                    Value
-                  </span>
+                                  <span className="text-xs text-muted-foreground mb-1 flex items-center">
+                                    <CircleDollarSign className="h-3 w-3 mr-1" />
+                                    Value
+                                  </span>
                                     <span className="text-lg font-semibold">
-                    ${portfolio.totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
+                                        ${portfolio.totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    </span>
                                     <span className="text-xs text-muted-foreground mt-1">
-                    {portfolio.stockCount} {portfolio.stockCount === 1 ? 'stock' : 'stocks'}
-                  </span>
+                                        {portfolio.stockCount} {portfolio.stockCount === 1 ? 'stock' : 'stocks'}
+                                    </span>
                                 </div>
 
                                 <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground mb-1 flex items-center">
-                    <CalendarClock className="h-3 w-3 mr-1" />
-                    Daily Change
-                  </span>
+                                  <span className="text-xs text-muted-foreground mb-1 flex items-center">
+                                    <CalendarClock className="h-3 w-3 mr-1" />
+                                    Daily Change
+                                  </span>
                                     <span className={`text-lg font-semibold flex items-center ${portfolio.dailyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {portfolio.dailyChange >= 0 ?
-                        <TrendingUp className="h-4 w-4 mr-1" /> :
-                        <TrendingDown className="h-4 w-4 mr-1" />
-                    }
+                                        {portfolio.dailyChange >= 0 ?
+                                            <TrendingUp className="h-4 w-4 mr-1" /> :
+                                            <TrendingDown className="h-4 w-4 mr-1" />
+                                        }
                                         ${Math.abs(portfolio.dailyChange).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
+                                    </span>
                                     <span className={`text-xs ${portfolio.dailyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChangePercent.toFixed(2)}%
-                  </span>
+                                        {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChangePercent.toFixed(2)}%
+                                    </span>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <span className="text-xs text-muted-foreground mb-1">Initial Investment</span>
                                     <span className="text-lg font-semibold">
-                    ${portfolio.initialInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
+                                        ${portfolio.initialInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    </span>
                                     <span className="text-xs text-muted-foreground mt-1">
-                    Total cost basis
-                  </span>
+                                        Total cost basis
+                                    </span>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <span className="text-xs text-muted-foreground mb-1">Total Return</span>
                                     <span className={`text-lg font-semibold ${portfolio.returnAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    ${portfolio.returnAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
+                                        ${portfolio.returnAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    </span>
                                     <span className={`text-xs ${portfolio.returnAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {portfolio.returnAmount >= 0 ? '+' : ''}{portfolio.returnPercent.toFixed(2)}%
-                  </span>
+                                        {portfolio.returnAmount >= 0 ? '+' : ''}{portfolio.returnPercent.toFixed(2)}%
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>

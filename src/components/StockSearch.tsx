@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
+import { stockService } from '@/services/api';
+import debounce from 'lodash/debounce';
+
 import {
     Command,
     CommandEmpty,
@@ -12,9 +15,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, X } from 'lucide-react';
-import { stockService } from '@/services/api';
-import debounce from 'lodash/debounce';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface StockSearchProps {
     onSelect: (symbol: string) => void;
@@ -77,13 +79,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
         };
     }, [searchQuery, debouncedSearch]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-        if (e.target.value.length > 0) {
-            setOpen(true);
-        }
-    };
-
     const handleSelectStock = (stock: SearchResult) => {
         setSearchQuery(stock.symbol);
         onSelect(stock.symbol);
@@ -100,26 +95,42 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <div className="relative w-full">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search for a stock..."
                             value={searchQuery}
-                            onChange={handleInputChange}
-                            className="w-full pr-8"
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                if (e.target.value.length > 0) {
+                                    setOpen(true);
+                                }
+                            }}
+                            className="pl-9 pr-10"
                         />
-                        {searchQuery ? (
-                            <X
-                                className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground cursor-pointer"
-                                onClick={clearSearch}
-                            />
-                        ) : (
-                            <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        {searchQuery && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-1 top-1 h-7 w-7 p-0"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearSearch();
+                                }}
+                            >
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Clear</span>
+                            </Button>
                         )}
                     </div>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                     <Command>
-                        <CommandInput placeholder="Search for a stock..." value={searchQuery} onValueChange={setSearchQuery} />
+                        <CommandInput
+                            placeholder="Search for a stock..."
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                        />
                         <CommandEmpty>
                             {isLoading ? 'Searching...' : 'No stocks found.'}
                         </CommandEmpty>
@@ -130,13 +141,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
                                     onSelect={() => handleSelectStock(stock)}
                                     className="flex justify-between"
                                 >
-                                    <div>
+                                    <div className="flex items-center">
                                         <span className="font-bold">{stock.symbol}</span>
-                                        <span className="ml-2 text-sm">{stock.shortname}</span>
+                                        <span className="ml-2 text-muted-foreground">{stock.shortname}</span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
-                    {stock.exchDisp}
-                  </span>
+                                        {stock.exchDisp}
+                                    </span>
                                 </CommandItem>
                             ))}
                         </CommandGroup>

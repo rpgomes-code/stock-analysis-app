@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Session } from 'next-auth';
 import { signOut } from 'next-auth/react';
-import { LineChart, Search, LogOut, Home, BarChart3, Briefcase, Settings, Menu } from 'lucide-react';
+import { LineChart, Search, LogOut, Home, BarChart3, Briefcase, Settings, Menu, User } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import {
+    NavigationMenu,
+    NavigationMenuContent,
+    NavigationMenuItem,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuTrigger,
+    navigationMenuTriggerStyle
+} from '@/components/ui/navigation-menu';
 
 interface NavbarProps {
     session: Session | null;
@@ -62,33 +71,88 @@ export default function Navbar({ session }: NavbarProps) {
                         <span className="font-bold text-xl hidden md:inline-block">StockAnalysis</span>
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <nav className="hidden md:flex gap-6">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`text-sm font-medium flex items-center transition-colors hover:text-primary ${
-                                    isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
-                                }`}
-                            >
-                                {item.icon}
-                                {item.label}
-                            </Link>
-                        ))}
-                        {session?.user && authNavItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`text-sm font-medium flex items-center transition-colors hover:text-primary ${
-                                    isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
-                                }`}
-                            >
-                                {item.icon}
-                                {item.label}
-                            </Link>
-                        ))}
-                    </nav>
+                    {/* Desktop Navigation using NavigationMenu */}
+                    <NavigationMenu className="hidden md:flex">
+                        <NavigationMenuList>
+                            {navItems.map((item) => (
+                                <NavigationMenuItem key={item.href}>
+                                    <Link href={item.href} legacyBehavior passHref>
+                                        <NavigationMenuLink
+                                            className={navigationMenuTriggerStyle()}
+                                            active={isActive(item.href)}
+                                        >
+                                            {item.icon}
+                                            {item.label}
+                                        </NavigationMenuLink>
+                                    </Link>
+                                </NavigationMenuItem>
+                            ))}
+
+                            {session?.user && (
+                                <NavigationMenuItem>
+                                    <NavigationMenuTrigger>
+                                        <Briefcase className="h-4 w-4 mr-2" />
+                                        Portfolio
+                                    </NavigationMenuTrigger>
+                                    <NavigationMenuContent>
+                                        <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                                            <li className="row-span-3">
+                                                <NavigationMenuLink asChild>
+                                                    <a
+                                                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                                                        href="/portfolio"
+                                                    >
+                                                    <Briefcase className="h-6 w-6" />
+                                                    <div className="mb-2 mt-4 text-lg font-medium">
+                                                        Portfolio Dashboard
+                                                    </div>
+                                                    <p className="text-sm leading-tight text-muted-foreground">
+                                                        View and manage your investment portfolios
+                                                    </p>
+                                                </a>
+                                            </NavigationMenuLink>
+                                        </li>
+                                        <li>
+                                            <Link href="/portfolio/create" legacyBehavior passHref>
+                                                <NavigationMenuLink>
+                                                    Create New Portfolio
+                                                </NavigationMenuLink>
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/portfolio/analysis" legacyBehavior passHref>
+                                                <NavigationMenuLink>
+                                                    Portfolio Analysis
+                                                </NavigationMenuLink>
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/portfolio/performance" legacyBehavior passHref>
+                                                <NavigationMenuLink>
+                                                    Performance Overview
+                                                </NavigationMenuLink>
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                                </NavigationMenuItem>
+                                )}
+
+                            {session?.user && (
+                                <NavigationMenuItem>
+                                    <Link href="/settings" legacyBehavior passHref>
+                                        <NavigationMenuLink
+                                            className={navigationMenuTriggerStyle()}
+                                            active={isActive('/settings')}
+                                        >
+                                            <Settings className="h-4 w-4 mr-2" />
+                                            Settings
+                                        </NavigationMenuLink>
+                                    </Link>
+                                </NavigationMenuItem>
+                            )}
+                        </NavigationMenuList>
+                    </NavigationMenu>
                 </div>
 
                 {/* Mobile Navigation */}
@@ -115,8 +179,10 @@ export default function Navbar({ session }: NavbarProps) {
                                         <Link
                                             key={item.href}
                                             href={item.href}
-                                            className={`text-sm font-medium flex items-center transition-colors hover:text-primary ${
-                                                isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
+                                            className={`text-sm font-medium flex items-center rounded-md p-2 transition-colors ${
+                                                isActive(item.href)
+                                                    ? 'text-primary bg-primary/10'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                                             }`}
                                             onClick={closeSheet}
                                         >
@@ -128,8 +194,10 @@ export default function Navbar({ session }: NavbarProps) {
                                         <Link
                                             key={item.href}
                                             href={item.href}
-                                            className={`text-sm font-medium flex items-center transition-colors hover:text-primary ${
-                                                isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
+                                            className={`text-sm font-medium flex items-center rounded-md p-2 transition-colors ${
+                                                isActive(item.href)
+                                                    ? 'text-primary bg-primary/10'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                                             }`}
                                             onClick={closeSheet}
                                         >
@@ -142,12 +210,15 @@ export default function Navbar({ session }: NavbarProps) {
                                 <div className="mt-auto">
                                     {session?.user ? (
                                         <div className="flex flex-col gap-4">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/50">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={session.user.image || undefined} alt={session.user.name || 'User'} />
                                                     <AvatarFallback>{getInitials(session.user.name || 'User')}</AvatarFallback>
                                                 </Avatar>
-                                                <div className="text-sm font-medium">{session.user.name}</div>
+                                                <div className="flex flex-col">
+                                                    <div className="text-sm font-medium">{session.user.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{session.user.email}</div>
+                                                </div>
                                             </div>
                                             <Button
                                                 variant="outline"
@@ -202,6 +273,12 @@ export default function Navbar({ session }: NavbarProps) {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href="/profile" className="cursor-pointer">
+                                        <User className="h-4 w-4 mr-2" />
+                                        Profile
+                                    </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href="/portfolio" className="cursor-pointer">
                                         <Briefcase className="h-4 w-4 mr-2" />

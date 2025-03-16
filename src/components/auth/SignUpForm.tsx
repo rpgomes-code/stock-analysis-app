@@ -17,9 +17,10 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 
 // Form validation schema
 const formSchema = z
@@ -85,6 +86,9 @@ export function SignUpForm() {
 
             // Show success message or redirect
             setSuccess(true);
+            toast.success('Account created',{
+                description: 'Your account has been created successfully. Redirecting to login...'
+            });
 
             // Sign in the user automatically
             setTimeout(() => {
@@ -117,7 +121,7 @@ export function SignUpForm() {
 
     return (
         <div className="grid gap-6">
-            {/* Error display */}
+            {/* Error alert */}
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
