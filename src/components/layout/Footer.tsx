@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { LineChart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
