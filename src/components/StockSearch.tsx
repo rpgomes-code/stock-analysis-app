@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X, Info } from 'lucide-react';
+import { Search, X, Info, Clock } from 'lucide-react';
 import { stockService } from '@/services/api';
 import debounce from 'lodash/debounce';
 
@@ -55,14 +55,36 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
     const [open, setOpen] = useState(false);
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
+    // Load recent searches from localStorage on component mount
+    useEffect(() => {
+        try {
+            const savedSearches = localStorage.getItem('stockSearches');
+            if (savedSearches) {
+                setRecentSearches(JSON.parse(savedSearches));
+            }
+        } catch (e) {
+            console.error('Failed to load recent searches:', e);
+        }
+    }, []);
+
     // Create a function to save recent searches
     const saveToRecentSearches = useCallback((query: string) => {
         if (!query.trim()) return;
 
         // Add to recent searches (avoiding duplicates)
         setRecentSearches(prev => {
-            if (prev.includes(query)) return prev;
-            return [query, ...prev].slice(0, 5); // Keep most recent 5
+            const newSearches = prev.includes(query)
+                ? prev
+                : [query, ...prev].slice(0, 5); // Keep most recent 5
+
+            // Save to localStorage
+            try {
+                localStorage.setItem('stockSearches', JSON.stringify(newSearches));
+            } catch (e) {
+                console.error('Failed to save recent searches:', e);
+            }
+
+            return newSearches;
         });
     }, []);
 
@@ -213,6 +235,23 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
                                 </div>
                             ) : (
                                 <>
+                                    {!searchQuery && recentSearches.length > 0 && (
+                                        <CommandGroup heading="Recent Searches">
+                                            {recentSearches.map((symbol, index) => (
+                                                <CommandItem
+                                                    key={`recent-${index}`}
+                                                    onSelect={() => {
+                                                        setSearchQuery(symbol);
+                                                        handleSelectStock({ symbol, shortname: symbol });
+                                                    }}
+                                                >
+                                                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                    <span>{symbol}</span>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    )}
+
                                     <CommandEmpty>
                                         No stocks found. Try a different search term.
                                     </CommandEmpty>

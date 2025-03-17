@@ -87,7 +87,7 @@ export default function SearchPage() {
         if (initialQuery) {
             performSearch(initialQuery);
         }
-    }, [initialQuery]);
+    }, [initialQuery, performSearch]);
 
     // Perform the search
     const performSearch = useCallback(async (query: string) => {
