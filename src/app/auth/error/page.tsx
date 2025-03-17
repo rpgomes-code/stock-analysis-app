@@ -18,10 +18,18 @@ export const metadata: Metadata = {
     description: "There was an error with authentication",
 };
 
-export default function AuthErrorPage({ searchParams }: {
-    searchParams: { error?: string }
+type SearchParamsType = {
+    [key: string]: string | string[] | undefined;
+};
+
+export default function AuthErrorPage({
+                                          searchParams,
+                                      }: {
+    searchParams: SearchParamsType;
 }) {
-    const error = searchParams.error || 'unknown';
+    // Handle both string and string[] cases for the error parameter
+    const errorParam = searchParams.error || 'unknown';
+    const error = Array.isArray(errorParam) ? errorParam[0] : errorParam;
 
     let errorMessage: string;
     let errorTitle: string;
@@ -61,9 +69,11 @@ export default function AuthErrorPage({ searchParams }: {
             break;
     }
 
+    // Rest of your component remains the same
     return (
         <div className="container flex h-screen w-screen flex-col items-center justify-center">
             <Card className="w-full max-w-md">
+                {/* Card content remains the same */}
                 <CardHeader className="space-y-1">
                     <div className="flex justify-center mb-4">
                         <Link href="/" className="flex items-center space-x-2">
