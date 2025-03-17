@@ -48,10 +48,17 @@ interface SearchResult {
 }
 
 const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
+    const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+
+    // Function to save recent searches (keeping it simple for now)
+    const saveToRecentSearches = (query: string) => {
+        // Implementation would go here in a real app
+        console.log(`Saving search: ${query}`);
+    };
 
     // Create a debounced search function
     const debouncedSearch = useCallback((query: string) => {
@@ -91,7 +98,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
         };
         const debouncedFn = debounce(handler, 300);
         debouncedFn(query);
-    }, [setSearchResults, setError, setIsLoading, saveToRecentSearches];
+    }, [setSearchResults, setError, setIsLoading]);
 
     // Effect to trigger search when query changes
     useEffect(() => {
