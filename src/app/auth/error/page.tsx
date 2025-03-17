@@ -19,9 +19,9 @@ export const metadata: Metadata = {
 };
 
 export default function AuthErrorPage({ searchParams }: {
-    searchParams: { error: string } | Promise<{ error: string }>;
+    searchParams: { error?: string }
 }) {
-    const { error } = searchParams as { error: string };
+    const error = searchParams.error || 'unknown';
 
     let errorMessage: string;
     let errorTitle: string;
