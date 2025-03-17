@@ -11,10 +11,10 @@ const prisma = new PrismaClient();
 // The critical difference is in this function signature - Next.js expects the EXACT format below
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    try {
-        const { id } = params; // Use params directly, not context.params
+    try {// Use params directly, not context.params
+        const { id } = await params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.email) {
