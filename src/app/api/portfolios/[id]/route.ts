@@ -1,5 +1,5 @@
 // src/app/api/portfolios/[id]/route.ts
-import { NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth-options';
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 // The critical difference is in this function signature - Next.js expects the EXACT format below
 export async function PUT(
-    request: Request,
+    req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
@@ -25,7 +25,7 @@ export async function PUT(
         }
 
         // Get request body
-        const body = await request.json();
+        const body = await req.json();
 
         if (!body.name) {
             return NextResponse.json(
