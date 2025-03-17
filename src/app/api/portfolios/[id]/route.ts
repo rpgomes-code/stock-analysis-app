@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import logger from '@/lib/logger';
+import {ApiError} from "@/types/errors";
 
 const prisma = new PrismaClient();
 
@@ -55,8 +56,13 @@ export async function GET(
         }
 
         return NextResponse.json(portfolio);
-    } catch (error: any) {
-        logger.error(`Error fetching portfolio: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to fetch portfolio' },
             { status: 500 }
@@ -134,8 +140,13 @@ export async function PUT(
         return NextResponse.json(
             { message: 'Portfolio updated successfully' }
         );
-    } catch (error: any) {
-        logger.error(`Error updating portfolio: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to update portfolio' },
             { status: 500 }
@@ -192,8 +203,13 @@ export async function DELETE(
         return NextResponse.json(
             { message: 'Portfolio deleted successfully' }
         );
-    } catch (error: any) {
-        logger.error(`Error deleting portfolio: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to delete portfolio' },
             { status: 500 }

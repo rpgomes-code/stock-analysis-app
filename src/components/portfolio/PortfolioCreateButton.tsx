@@ -25,6 +25,7 @@ interface PortfolioCreateButtonProps {
 }
 
 export default function PortfolioCreateButton({ userId }: PortfolioCreateButtonProps) {
+    console.log(userId);
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [portfolioName, setPortfolioName] = useState('');

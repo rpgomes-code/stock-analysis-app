@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stockService } from '@/services/api';
 import logger from '@/lib/logger';
+import {ApiError} from "@/types/errors";
 
 // GET /api/market/status - Get market status
 export async function GET(req: NextRequest) {
@@ -11,8 +12,13 @@ export async function GET(req: NextRequest) {
 
         const status = await stockService.getMarketStatus(market);
         return NextResponse.json(status);
-    } catch (error: any) {
-        logger.error(`Error fetching market status: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to fetch market status' },
             { status: 500 }

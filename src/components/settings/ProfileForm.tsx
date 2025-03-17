@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {UserProps} from "@/types/settings";
 
 // Form schema validation
 const profileFormSchema = z.object({
@@ -48,12 +49,7 @@ const profileFormSchema = z.object({
 });
 
 interface ProfileFormProps {
-    user: {
-        name?: string;
-        username?: string;
-        bio?: string;
-        image?: string;
-    };
+    user: UserProps;
 }
 
 export default function ProfileForm({ user }: ProfileFormProps) {

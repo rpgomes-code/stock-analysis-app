@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import logger from '@/lib/logger';
+import {ApiError} from "@/types/errors";
 
 const prisma = new PrismaClient();
 
@@ -62,8 +63,13 @@ export async function GET(
         });
 
         return NextResponse.json(transactions);
-    } catch (error: any) {
-        logger.error(`Error fetching transactions: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to fetch transactions' },
             { status: 500 }
@@ -182,8 +188,13 @@ export async function POST(
             { message: 'Transaction added successfully', transaction },
             { status: 201 }
         );
-    } catch (error: any) {
-        logger.error(`Error adding transaction: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to add transaction' },
             { status: 500 }

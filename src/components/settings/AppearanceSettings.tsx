@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTheme } from '@/components/theme/ThemeProvider';
+import {UserProps} from "@/types/settings";
 
 // Form schema validation
 const appearanceFormSchema = z.object({
@@ -34,7 +35,7 @@ const appearanceFormSchema = z.object({
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
 interface AppearanceSettingsProps {
-    user: { id: string; name: string; email: string } | null;
+    user: UserProps;
 }
 
 export default function AppearanceSettings({ user }: AppearanceSettingsProps) {

@@ -4,11 +4,12 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import logger from '@/lib/logger';
+import {ApiError} from "@/types/errors";
 
 const prisma = new PrismaClient();
 
 // GET /api/watchlists - Get all watchlists for the current user
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
@@ -49,8 +50,13 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json(watchlists);
-    } catch (error: any) {
-        logger.error(`Error fetching watchlists: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to fetch watchlists' },
             { status: 500 }
@@ -107,8 +113,13 @@ export async function POST(req: NextRequest) {
             { message: 'Watchlist created successfully', watchlist },
             { status: 201 }
         );
-    } catch (error: any) {
-        logger.error(`Error creating watchlist: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to create watchlist' },
             { status: 500 }

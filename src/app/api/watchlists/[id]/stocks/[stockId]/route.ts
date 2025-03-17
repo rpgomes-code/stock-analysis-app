@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import logger from '@/lib/logger';
+import {ApiError} from "@/types/errors";
 
 const prisma = new PrismaClient();
 
@@ -71,8 +72,13 @@ export async function DELETE(
         return NextResponse.json(
             { message: 'Stock removed from watchlist successfully' }
         );
-    } catch (error: any) {
-        logger.error(`Error removing stock from watchlist: ${error.message}`, { error });
+    } catch (error: unknown) {
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
+            originalError: error
+        };
+
+        logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to remove stock from watchlist' },
             { status: 500 }

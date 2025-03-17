@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
+import {UserProps} from "@/types/settings";
 
 // Form schema validation
 const notificationFormSchema = z.object({
@@ -38,12 +39,7 @@ const notificationFormSchema = z.object({
 type NotificationFormValues = z.infer<typeof notificationFormSchema>;
 
 interface NotificationSettingsProps {
-    user: {
-        id: string;
-        email: string;
-        name?: string;
-        preferences?: Partial<NotificationFormValues>;
-    };
+    user: UserProps;
 }
 
 export default function NotificationSettings({ user }: NotificationSettingsProps) {

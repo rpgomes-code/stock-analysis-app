@@ -113,33 +113,6 @@ export function formatWithSign(value: number, minimumFractionDigits = 2, maximum
 }
 
 /**
- * Debounces a function call
- */
-export function debounce<T extends (...args: any[]) => any>(func: T, delay: number): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-
-  return function(...args: Parameters<T>) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), delay);
-  };
-}
-
-/**
- * Throttles a function call
- */
-export function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void {
-  let inThrottle: boolean = false;
-
-  return function(...args: Parameters<T>) {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-}
-
-/**
  * Generates initials from a name
  */
 export function getInitials(name: string): string {
@@ -193,19 +166,4 @@ export function timeAgo(dateString: string): string {
   }
 
   return `${Math.floor(seconds)} second${seconds === 1 ? '' : 's'} ago`;
-}
-
-/**
- * Checks if a value is null or undefined
- */
-export function isNullOrUndefined(value: any): boolean {
-  return value === null || value === undefined;
-}
-
-/**
- * Safely accesses a nested property in an object
- */
-export function getNestedProperty(obj: any, path: string, defaultValue: any = undefined) {
-  const keys = path.split('.');
-  return keys.reduce((o, key) => (o && o[key] !== undefined ? o[key] : defaultValue), obj);
 }
