@@ -1,74 +1,12 @@
-// src/app/api/portfolios/[id]/route.ts
+// In src/app/api/portfolios/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import logger from '@/lib/logger';
-import {ApiError} from "@/types/errors";
+import { ApiError } from "@/types/errors";
 
 const prisma = new PrismaClient();
-
-// GET /api/portfolios/[id] - Get a specific portfolio
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    try {
-        const { id } = params;
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user?.email) {
-            return NextResponse.json(
-                { message: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
-        // Find the user
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            select: { id: true }
-        });
-
-        if (!user) {
-            return NextResponse.json(
-                { message: 'User not found' },
-                { status: 404 }
-            );
-        }
-
-        // Get the portfolio with stocks
-        const portfolio = await prisma.portfolio.findFirst({
-            where: {
-                id,
-                userId: user.id
-            },
-            include: {
-                stocks: true
-            }
-        });
-
-        if (!portfolio) {
-            return NextResponse.json(
-                { message: 'Portfolio not found' },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(portfolio);
-    } catch (error: unknown) {
-        const apiError: ApiError = {
-            message: error instanceof Error ? error.message : 'An unknown error occurred',
-            originalError: error
-        };
-
-        logger.error(`Error message: ${apiError.message}`, { error: apiError });
-        return NextResponse.json(
-            { message: 'Failed to fetch portfolio' },
-            { status: 500 }
-        );
-    }
-}
 
 // PUT /api/portfolios/[id] - Update a portfolio
 export async function PUT(
@@ -110,7 +48,13 @@ export async function PUT(
         }
 
         // Update portfolio
-        const updateData: any = { name: body.name };
+        interface PortfolioUpdateData {
+            name: string;
+            description?: string | null;
+            initialInvestment?: number;
+        }
+
+        const updateData: PortfolioUpdateData = { name: body.name };
 
         if (body.description !== undefined) {
             updateData.description = body.description;
@@ -120,6 +64,7 @@ export async function PUT(
             updateData.initialInvestment = body.initialInvestment;
         }
 
+        // Change updateMany calls to use the typed updateData
         const portfolio = await prisma.portfolio.updateMany({
             where: {
                 id,
@@ -149,69 +94,6 @@ export async function PUT(
         logger.error(`Error message: ${apiError.message}`, { error: apiError });
         return NextResponse.json(
             { message: 'Failed to update portfolio' },
-            { status: 500 }
-        );
-    }
-}
-
-// DELETE /api/portfolios/[id] - Delete a portfolio
-export async function DELETE(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    try {
-        const { id } = params;
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user?.email) {
-            return NextResponse.json(
-                { message: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
-        // Find the user
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            select: { id: true }
-        });
-
-        if (!user) {
-            return NextResponse.json(
-                { message: 'User not found' },
-                { status: 404 }
-            );
-        }
-
-        // Delete portfolio (this will cascade delete associated stocks)
-        const portfolio = await prisma.portfolio.deleteMany({
-            where: {
-                id,
-                userId: user.id
-            }
-        });
-
-        if (portfolio.count === 0) {
-            return NextResponse.json(
-                { message: 'Portfolio not found or not owned by user' },
-                { status: 404 }
-            );
-        }
-
-        logger.info(`Portfolio deleted: ${id} for user: ${user.id}`);
-
-        return NextResponse.json(
-            { message: 'Portfolio deleted successfully' }
-        );
-    } catch (error: unknown) {
-        const apiError: ApiError = {
-            message: error instanceof Error ? error.message : 'An unknown error occurred',
-            originalError: error
-        };
-
-        logger.error(`Error message: ${apiError.message}`, { error: apiError });
-        return NextResponse.json(
-            { message: 'Failed to delete portfolio' },
             { status: 500 }
         );
     }

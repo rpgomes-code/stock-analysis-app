@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search as SearchIcon, XCircle, TrendingUp, Building2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
@@ -64,12 +64,12 @@ export default function SearchPage() {
     // Search on component mount if a query provided in URL
     useEffect(() => {
         if (initialQuery) {
-            performSearch(initialQuery).then(() => {});
+            performSearch(initialQuery);
         }
-    }, [initialQuery]);
+    }, [initialQuery, performSearch]);
 
     // Perform the search
-    const performSearch = async (query: string) => {
+    const performSearch = useCallback(async (query: string) => {
         if (!query.trim()) return;
 
         setIsLoading(true);
@@ -116,7 +116,7 @@ export default function SearchPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [router]);
 
     // Save search query to recent searches
     const saveToRecentSearches = (query: string) => {

@@ -9,7 +9,7 @@ import {ApiError} from "@/types/errors";
 const prisma = new PrismaClient();
 
 // GET /api/portfolios - Get all portfolios for the current user
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions);
 

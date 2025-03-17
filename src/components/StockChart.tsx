@@ -140,7 +140,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
         };
 
         fetchData().then(() => {});
-    }, [symbol, period, interval]);
+    }, [symbol, period, interval, stockInfo]);
 
     // Color based on stock performance
     const getChartColor = () => {

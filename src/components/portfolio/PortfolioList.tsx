@@ -40,6 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { stockService } from '@/services/api';
+import {Stock, TransactionData} from "@/types/portfolio";
 
 interface PortfolioListProps {
     userId: string;
@@ -59,12 +60,6 @@ interface Portfolio {
     returnPercent?: number;
     dailyChange?: number;
     dailyChangePercent?: number;
-}
-
-interface Stock {
-    id: string;
-    symbol: string;
-    [key: string]: any;
 }
 
 export default function PortfolioList({ userId }: PortfolioListProps) {
@@ -110,7 +105,7 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                 // Calculate portfolio values and returns
                 const enrichedPortfolios = await Promise.all(portfoliosData.map(async (portfolio: Portfolio) => {
                     // For each portfolio, we need to get transactions to calculate average cost
-                    let transactions = [];
+                    let transactions: TransactionData[] = [];
                     try {
                         const transactionsResponse = await axios.get(`/api/portfolios/${portfolio.id}/transactions`);
                         transactions = transactionsResponse.data;
@@ -131,9 +126,13 @@ export default function PortfolioList({ userId }: PortfolioListProps) {
                         let totalShares = 0;
                         let totalCost = 0;
 
+                        const avgCost = totalShares > 0 ? totalCost / totalShares : 0;
+
+                        console.log(avgCost);
+
                         transactions
-                            .filter((t: any) => t.stockSymbol === stock.symbol)
-                            .forEach((transaction: any) => {
+                            .filter((t: TransactionData) => t.stockSymbol === stock.symbol)
+                            .forEach((transaction: TransactionData) => {
                                 if (transaction.type === 'BUY') {
                                     totalShares += transaction.quantity;
                                     totalCost += transaction.quantity * transaction.price;

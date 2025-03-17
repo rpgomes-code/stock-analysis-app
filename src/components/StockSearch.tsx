@@ -55,8 +55,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
     const [open, setOpen] = useState(false);
 
     // Create a debounced search function
-    const debouncedSearch = useCallback(
-        debounce(async (query: string) => {
+    const debouncedSearch = useCallback((query: string) => {
+        const handler = async (searchQuery: string) => {
             if (!query || query.length < 2) {
                 setSearchResults([]);
                 setError(null);
@@ -89,9 +89,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
             } finally {
                 setIsLoading(false);
             }
-        }, 300),
-        []
-    );
+        };
+        const debouncedFn = debounce(handler, 300);
+        debouncedFn(query);
+    }, [setSearchResults, setError, setIsLoading]);
 
     // Effect to trigger search when query changes
     useEffect(() => {
