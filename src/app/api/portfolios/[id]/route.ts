@@ -10,7 +10,6 @@ const prisma = new PrismaClient();
 
 // PUT /api/portfolios/[id] - Update a portfolio
 // Fix the function signature for Next.js App Router compatibility
-// PUT /api/portfolios/[id] - Update a portfolio
 export async function PUT(
     request: Request,
     context: { params: { id: string } }
