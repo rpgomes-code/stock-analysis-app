@@ -88,50 +88,60 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
         });
     }, []);
 
-    // Create a debounced search function
-    const debouncedSearch = useCallback((searchTerm: string) => {
-        const handler = async (term: string) => {
-            if (!term || term.length < 2) {
-                setSearchResults([]);
-                setError(null);
-                return;
-            }
-
-            setIsLoading(true);
+    // Create a properly debounced search function that can be canceled
+    const performSearch = useCallback(async (term: string) => {
+        if (!term || term.length < 2) {
+            setSearchResults([]);
             setError(null);
+            return;
+        }
 
-            try {
-                // Call the real API to search for stocks
-                const results = await stockService.searchQuotes(term);
+        setIsLoading(true);
+        setError(null);
 
-                if (results && Array.isArray(results)) {
-                    const formattedResults = results.map((item: Partial<SearchResult>) => ({
-                        symbol: item.symbol || '',
-                        shortname: item.shortname || item.symbol || '',
-                        longname: item.longname,
-                        exchDisp: item.exchDisp,
-                        typeDisp: item.typeDisp,
-                    }));
-                    setSearchResults(formattedResults);
-                } else {
-                    setSearchResults([]);
-                }
-            } catch (error) {
-                console.error('Error searching stocks:', error);
+        try {
+            // Call the real API to search for stocks
+            const results = await stockService.searchQuotes(term);
+
+            if (results && Array.isArray(results)) {
+                const formattedResults = results.map((item: Partial<SearchResult>) => ({
+                    symbol: item.symbol || '',
+                    shortname: item.shortname || item.symbol || '',
+                    longname: item.longname,
+                    exchDisp: item.exchDisp,
+                    typeDisp: item.typeDisp,
+                }));
+                setSearchResults(formattedResults);
+            } else {
                 setSearchResults([]);
-                setError('Failed to fetch search results. Please try again.');
-            } finally {
-                setIsLoading(false);
             }
-        };
-        const debouncedFn = debounce(handler, 300);
-        debouncedFn(searchTerm);
+        } catch (error) {
+            console.error('Error searching stocks:', error);
+            setSearchResults([]);
+            setError('Failed to fetch search results. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    // Create a properly debounced search function with useCallback
+    const debouncedSearch = useCallback(
+        debounce((searchTerm: string) => {
+            performSearch(searchTerm);
+        }, 300),
+        [performSearch]
+    );
 
     // Effect to trigger search when query changes
     useEffect(() => {
-        debouncedSearch(searchQuery);
+        if (searchQuery.length >= 2) {
+            debouncedSearch(searchQuery);
+        } else {
+            setSearchResults([]);
+            setError(null);
+        }
 
+        // Cleanup function
         return () => {
             debouncedSearch.cancel();
         };
