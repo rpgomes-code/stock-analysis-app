@@ -1,12 +1,10 @@
 // src/app/api/watchlists/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth-options';
 import logger from '@/lib/logger';
-import {ApiError} from "@/types/errors";
-
-const prisma = new PrismaClient();
+import { ApiError } from "@/types/errors";
+import db from '@/lib/db'; // Updated to use the server-only db instance
 
 // GET /api/watchlists - Get all watchlists for the current user
 export async function GET() {
@@ -21,7 +19,7 @@ export async function GET() {
         }
 
         // Find the user
-        const user = await prisma.user.findUnique({
+        const user = await db.user.findUnique({
             where: { email: session.user.email },
             select: { id: true }
         });
@@ -34,7 +32,7 @@ export async function GET() {
         }
 
         // Get all watchlists with their stocks
-        const watchlists = await prisma.watchlist.findMany({
+        const watchlists = await db.watchlist.findMany({
             where: { userId: user.id },
             include: {
                 stocks: {
@@ -87,7 +85,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Find the user
-        const user = await prisma.user.findUnique({
+        const user = await db.user.findUnique({
             where: { email: session.user.email },
             select: { id: true }
         });
@@ -100,7 +98,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Create watchlist
-        const watchlist = await prisma.watchlist.create({
+        const watchlist = await db.watchlist.create({
             data: {
                 name: body.name,
                 userId: user.id

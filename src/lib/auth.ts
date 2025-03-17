@@ -1,9 +1,8 @@
+// src/lib/auth.ts
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 import { redirect } from "next/navigation";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import db from "./db"; // Updated to use the server-only db instance
 
 export async function getSession() {
     return await getServerSession(authOptions);
@@ -16,7 +15,7 @@ export async function getCurrentUser() {
         return null;
     }
 
-    const currentUser = await prisma.user.findUnique({
+    const currentUser = await db.user.findUnique({
         where: {
             email: session.user.email
         }
