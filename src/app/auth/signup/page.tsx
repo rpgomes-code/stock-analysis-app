@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 import {
     Card,
     CardContent,
@@ -12,6 +12,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { SignUpForm } from "@/components/auth/SignUpForm";
+import {authOptions} from "@/lib/auth-options";
 
 export const metadata: Metadata = {
     title: "Sign Up | Stock Analysis",
