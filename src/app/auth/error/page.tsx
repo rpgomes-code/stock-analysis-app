@@ -18,12 +18,10 @@ export const metadata: Metadata = {
     description: "There was an error with authentication",
 };
 
-export default function AuthErrorPage({
-                                          searchParams,
-                                      }: {
-    searchParams: { error: string };
+export default function AuthErrorPage({ searchParams }: {
+    searchParams: { error: string } | Promise<{ error: string }>;
 }) {
-    const { error } = searchParams;
+    const { error } = searchParams as { error: string };
 
     let errorMessage: string;
     let errorTitle: string;

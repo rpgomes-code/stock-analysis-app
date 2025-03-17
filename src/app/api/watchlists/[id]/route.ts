@@ -11,9 +11,10 @@ const prisma = new PrismaClient();
 // GET /api/watchlists/[id] - Get a specific watchlist
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
+        console.log(req);
         const { id } = params;
         const session = await getServerSession(authOptions);
 
@@ -73,7 +74,7 @@ export async function GET(
 // PUT /api/watchlists/[id] - Update a watchlist
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
         const { id } = params;
@@ -149,9 +150,10 @@ export async function PUT(
 // DELETE /api/watchlists/[id] - Delete a watchlist
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
+        console.log(req);
         const { id } = params;
         const session = await getServerSession(authOptions);
 

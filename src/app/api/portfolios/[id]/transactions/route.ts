@@ -1,5 +1,5 @@
 // src/app/api/portfolios/[id]/transactions/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth-options';
@@ -11,9 +11,10 @@ const prisma = new PrismaClient();
 // GET /api/portfolios/[id]/transactions - Get all transactions for a portfolio
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
+        console.log(req);
         const { id } = params;
         const session = await getServerSession(authOptions);
 
@@ -80,7 +81,7 @@ export async function GET(
 // POST /api/portfolios/[id]/transactions - Add a transaction to a portfolio
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
         const { id } = params;

@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 // DELETE /api/portfolios/[id]/stocks/[stockId] - Remove a stock from a portfolio
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string; stockId: string } }
+    { params }: { params: Promise<{ id: string; stockId: string }> }
 ) {
     try {
         const { id, stockId } = params;

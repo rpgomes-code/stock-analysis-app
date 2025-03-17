@@ -1,5 +1,5 @@
 // src/app/api/stocks/[symbol]/history/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import { stockService } from '@/services/api';
 import logger from '@/lib/logger';
 import {ApiError} from "@/types/errors";
@@ -7,9 +7,10 @@ import {ApiError} from "@/types/errors";
 // GET /api/stocks/[symbol]/history - Get stock price history
 export async function GET(
     req: NextRequest,
-    { params }: { params: { symbol: string } }
+    { params }: { params: Promise<{ symbol: string; }> }
 ) {
     try {
+        console.log(req);
         const { symbol } = params;
         const searchParams = new URL(req.url).searchParams;
 

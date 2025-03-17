@@ -1,5 +1,5 @@
 // src/app/api/stocks/[symbol]/news/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import { stockService } from '@/services/api';
 import logger from '@/lib/logger';
 import {ApiError} from "@/types/errors";
@@ -7,9 +7,10 @@ import {ApiError} from "@/types/errors";
 // GET /api/stocks/[symbol]/news - Get stock news
 export async function GET(
     req: NextRequest,
-    { params }: { params: { symbol: string } }
+    { params }: { params: Promise<{ symbol: string; }> }
 ) {
     try {
+        console.log(req);
         const { symbol } = params;
 
         const news = await stockService.getTickerNews(symbol);

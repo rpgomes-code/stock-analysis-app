@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 // POST /api/watchlists/[id]/stocks - Add a stock to a watchlist
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string; }> }
 ) {
     try {
         const { id } = params;

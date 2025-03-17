@@ -11,9 +11,10 @@ const prisma = new PrismaClient();
 // DELETE /api/watchlists/[id]/stocks/[stockId] - Remove a stock from a watchlist
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string; stockId: string } }
+    { params }: { params: Promise<{ id: string; stockId: string; }> }
 ) {
     try {
+        console.log(req);
         const { id, stockId } = params;
         const session = await getServerSession(authOptions);
 
