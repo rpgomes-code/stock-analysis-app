@@ -61,12 +61,33 @@ export default function SearchPage() {
         }
     }, []);
 
+    // Save search query to recent searches
+    const saveToRecentSearches = useCallback((query: string) => {
+        const trimmedQuery = query.trim();
+        if (!trimmedQuery) return;
+
+        // Add to recent searches (avoiding duplicates and limiting to 5)
+        const updatedSearches = [
+            trimmedQuery,
+            ...recentSearches.filter(s => s !== trimmedQuery)
+        ].slice(0, 5);
+
+        setRecentSearches(updatedSearches);
+
+        // Save to localStorage
+        try {
+            localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+        } catch (e) {
+            console.error('Error saving to localStorage:', e);
+        }
+    }, [recentSearches]);
+
     // Search on component mount if a query provided in URL
     useEffect(() => {
         if (initialQuery) {
             performSearch(initialQuery);
         }
-    }, [initialQuery, performSearch]);
+    }, [initialQuery]);
 
     // Perform the search
     const performSearch = useCallback(async (query: string) => {
@@ -116,28 +137,7 @@ export default function SearchPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [router]);
-
-    // Save search query to recent searches
-    const saveToRecentSearches = (query: string) => {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery) return;
-
-        // Add to recent searches (avoiding duplicates and limiting to 5)
-        const updatedSearches = [
-            trimmedQuery,
-            ...recentSearches.filter(s => s !== trimmedQuery)
-        ].slice(0, 5);
-
-        setRecentSearches(updatedSearches);
-
-        // Save to localStorage
-        try {
-            localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-        } catch (e) {
-            console.error('Error saving to localStorage:', e);
-        }
-    };
+    }, [router, saveToRecentSearches]);
 
     // Clear recent searches
     const clearRecentSearches = () => {

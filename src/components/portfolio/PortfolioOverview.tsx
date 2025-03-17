@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {LineChart, BarChart, PieChart, ArrowUpRight, ArrowDownRight, AlertTriangle, PlusCircle} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +60,25 @@ interface HoldingData {
 interface HistoryPoint {
     date: string;
     value: number;
+}
+
+interface StockData {
+    regularMarketPrice?: number;
+    currentPrice?: number;
+    regularMarketChange?: number;
+    shortName?: string;
+    longName?: string;
+    [key: string]: unknown;
+}
+
+interface TransactionData {
+    id?: string;
+    stockSymbol: string;
+    quantity: number;
+    price: number;
+    type: 'BUY' | 'SELL';
+    timestamp: Date | string;
+    portfolioId?: string;
 }
 
 export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
@@ -165,13 +184,13 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
 
     // Helper function to calculate holdings based on transactions
     const calculateHoldings = (
-        stocks: any[],
-        transactions: any[],
-        stocksData: Record<string, any>
+        stocks: Array<{ id: string; symbol: string }>,
+        transactions: TransactionData[],
+        stocksData: Record<string, StockData>
     ): HoldingData[] => {
         // Group transactions by symbol
-        const transactionsBySymbol: Record<string, any[]> = {};
-        transactions.forEach((transaction: any) => {
+        const transactionsBySymbol: Record<string, TransactionData[]> = {};
+        transactions.forEach((transaction: TransactionData) => {
             if (!transactionsBySymbol[transaction.stockSymbol]) {
                 transactionsBySymbol[transaction.stockSymbol] = [];
             }
@@ -188,7 +207,7 @@ export default function PortfolioOverview({ userId }: PortfolioOverviewProps) {
             let totalCost = 0;
 
             // Calculate shares and cost basis from transactions
-            stockTransactions.forEach((transaction: any) => {
+            stockTransactions.forEach((transaction: TransactionData) => {
                 if (transaction.type === 'BUY') {
                     totalShares += transaction.quantity;
                     totalCost += transaction.quantity * transaction.price;

@@ -53,17 +53,23 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-    // Function to save recent searches (keeping it simple for now)
-    const saveToRecentSearches = (query: string) => {
-        // Implementation would go here in a real app
-        console.log(`Saving search: ${query}`);
-    };
+    // Create a function to save recent searches
+    const saveToRecentSearches = useCallback((query: string) => {
+        if (!query.trim()) return;
+
+        // Add to recent searches (avoiding duplicates)
+        setRecentSearches(prev => {
+            if (prev.includes(query)) return prev;
+            return [query, ...prev].slice(0, 5); // Keep most recent 5
+        });
+    }, []);
 
     // Create a debounced search function
-    const debouncedSearch = useCallback((query: string) => {
-        const handler = async (searchQuery: string) => {
-            if (!query || query.length < 2) {
+    const debouncedSearch = useCallback((searchTerm: string) => {
+        const handler = async (term: string) => {
+            if (!term || term.length < 2) {
                 setSearchResults([]);
                 setError(null);
                 return;
@@ -74,7 +80,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
 
             try {
                 // Call the real API to search for stocks
-                const results = await stockService.searchQuotes(query);
+                const results = await stockService.searchQuotes(term);
 
                 if (results && Array.isArray(results)) {
                     const formattedResults = results.map((item: Partial<SearchResult>) => ({
@@ -97,8 +103,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
             }
         };
         const debouncedFn = debounce(handler, 300);
-        debouncedFn(query);
-    }, [setSearchResults, setError, setIsLoading]);
+        debouncedFn(searchTerm);
+    }, []);
 
     // Effect to trigger search when query changes
     useEffect(() => {
@@ -111,6 +117,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
 
     const handleSelectStock = (stock: SearchResult) => {
         setSearchQuery(stock.symbol);
+        saveToRecentSearches(stock.symbol);
         onSelect(stock.symbol);
         setOpen(false);
     };
