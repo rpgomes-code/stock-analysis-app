@@ -164,6 +164,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol }) => {
     const chartColor = getChartColor();
     const validIntervals = getValidIntervals();
 
+    console.log(`Chart performance: ${performance.value}%`);
+
     // Current stock price from stockInfo or last data point
     const currentPrice = stockInfo?.regularMarketPrice ||
         (data.length > 0 ? data[data.length - 1].close : 0);

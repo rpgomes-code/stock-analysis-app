@@ -48,7 +48,6 @@ interface SearchResult {
 }
 
 const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
-    const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -92,7 +91,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect }) => {
         };
         const debouncedFn = debounce(handler, 300);
         debouncedFn(query);
-    }, [setSearchResults, setError, setIsLoading]);
+    }, [setSearchResults, setError, setIsLoading, saveToRecentSearches];
 
     // Effect to trigger search when query changes
     useEffect(() => {
