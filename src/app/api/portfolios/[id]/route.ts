@@ -2,20 +2,19 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
-import { authOptions } from '@/lib/auth-options'; // Updated import
+import { authOptions } from '@/lib/auth-options';
 import logger from '@/lib/logger';
-import {ApiError} from "@/types/errors";
+import { ApiError } from "@/types/errors";
 
 const prisma = new PrismaClient();
 
-// PUT /api/portfolios/[id] - Update a portfolio
-// Fix the function signature for Next.js App Router compatibility
+// The critical difference is in this function signature - Next.js expects the EXACT format below
 export async function PUT(
     request: Request,
-    context: { params: { id: string } }
+    { params }: { params: { id: string } }
 ) {
     try {
-        const { id } = context.params;
+        const { id } = params; // Use params directly, not context.params
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.email) {
