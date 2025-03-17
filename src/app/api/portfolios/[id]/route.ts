@@ -1,5 +1,5 @@
 // src/app/api/portfolios/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth-options'; // Updated import
@@ -10,12 +10,13 @@ const prisma = new PrismaClient();
 
 // PUT /api/portfolios/[id] - Update a portfolio
 // Fix the function signature for Next.js App Router compatibility
+// PUT /api/portfolios/[id] - Update a portfolio
 export async function PUT(
-    req: NextRequest,
-    { params }: { params: { id: string } }
+    request: Request,
+    context: { params: { id: string } }
 ) {
     try {
-        const { id } = params;
+        const { id } = context.params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.email) {
@@ -26,7 +27,7 @@ export async function PUT(
         }
 
         // Get request body
-        const body = await req.json();
+        const body = await request.json();
 
         if (!body.name) {
             return NextResponse.json(
