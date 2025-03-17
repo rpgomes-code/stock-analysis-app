@@ -1,14 +1,15 @@
-// In src/app/api/portfolios/[id]/route.ts
+// src/app/api/portfolios/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
-import { authOptions } from '@/lib/auth-options';
+import { authOptions } from '@/lib/auth-options'; // Updated import
 import logger from '@/lib/logger';
-import { ApiError } from "@/types/errors";
+import {ApiError} from "@/types/errors";
 
 const prisma = new PrismaClient();
 
 // PUT /api/portfolios/[id] - Update a portfolio
+// Fix the function signature for Next.js App Router compatibility
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
